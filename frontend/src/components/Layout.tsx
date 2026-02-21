@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -71,7 +71,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       
       <main className="main-content">
         <div className="container">
-          {children}
+          <Outlet />
         </div>
       </main>
     </div>
