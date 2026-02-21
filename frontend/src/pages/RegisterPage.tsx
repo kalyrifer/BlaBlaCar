@@ -32,35 +32,17 @@ export default function RegisterPage() {
   return (
     <div className="auth-page">
       <div className="auth-form-container">
-        <h1>Регистрация</h1>
+        <h1>Присоединяйся! 🚀</h1>
+        <p className="subtitle">Создай аккаунт для поиска попутчиков</p>
         
         <form onSubmit={handleSubmit} className="auth-form">
           {error && <div className="error">{error}</div>}
           
           <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Пароль</label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Имя</label>
+            <label>👤 Имя</label>
             <input
               type="text"
+              placeholder="Как к тебе обращаться"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
@@ -68,11 +50,34 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label>Телефон</label>
+            <label>📧 Email</label>
+            <input
+              type="email"
+              placeholder="example@mail.ru"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>📱 Телефон</label>
             <input
               type="tel"
+              placeholder="+7 999 123-45-67"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>🔒 Пароль</label>
+            <input
+              type="password"
+              placeholder="Придумай пароль"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
           </div>
@@ -83,7 +88,7 @@ export default function RegisterPage() {
         </form>
 
         <p className="auth-link">
-          Есть аккаунт? <Link to="/login">Вход</Link>
+          Есть аккаунт? <Link to="/login">Войти</Link>
         </p>
       </div>
     </div>

@@ -1,18 +1,17 @@
 import { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { login } = useAuthStore();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const searchParams = new URLSearchParams(location.search);
-  const redirect = searchParams.get('redirect') || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +19,8 @@ export default function LoginPage() {
     setError('');
     
     try {
-      await login(email, password);
+      await login(formData.email, formData.password);
+      const redirect = searchParams.get('redirect') || '/';
       navigate(redirect);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка входа');
@@ -32,27 +32,30 @@ export default function LoginPage() {
   return (
     <div className="auth-page">
       <div className="auth-form-container">
-        <h1>Вход</h1>
+        <h1>С возвращением! 👋</h1>
+        <p className="subtitle">Войди в свой аккаунт</p>
         
         <form onSubmit={handleSubmit} className="auth-form">
           {error && <div className="error">{error}</div>}
           
           <div className="form-group">
-            <label>Email</label>
+            <label>📧 Email</label>
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="example@mail.ru"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
           </div>
 
           <div className="form-group">
-            <label>Пароль</label>
+            <label>🔒 Пароль</label>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Введите пароль"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
           </div>
@@ -63,7 +66,7 @@ export default function LoginPage() {
         </form>
 
         <p className="auth-link">
-          Нет аккаунта? <Link to="/register">Регистрация</Link>
+          Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
         </p>
       </div>
     </div>
