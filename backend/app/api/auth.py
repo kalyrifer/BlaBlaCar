@@ -1,5 +1,5 @@
 """Auth endpoints"""
-from fastapi import APIRouter, HTTPException, status, Response
+from fastapi import APIRouter, HTTPException, status, Response, Depends
 from pydantic import BaseModel, EmailStr
 
 from app.core.database import get_db

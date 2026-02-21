@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../services/api';
+import { notificationsApi } from '../services/api';
 import { Notification } from '../types';
 
 export default function NotificationsPage() {
@@ -12,8 +12,8 @@ export default function NotificationsPage() {
 
   const loadNotifications = async () => {
     try {
-      const data = await api.getNotifications();
-      setNotifications(data);
+      const data = await notificationsApi.getAll();
+      setNotifications(data.items || data);
     } catch (error) {
       console.error('Failed to load notifications:', error);
     } finally {
@@ -21,9 +21,9 @@ export default function NotificationsPage() {
     }
   };
 
-  const markAsRead = async (id: number) => {
+  const markAsRead = async (id: string) => {
     try {
-      await api.markNotificationRead(id);
+      await notificationsApi.markAsRead(id);
       setNotifications(notifications.map(n => 
         n.id === id ? { ...n, is_read: true } : n
       ));

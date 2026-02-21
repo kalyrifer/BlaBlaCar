@@ -2,8 +2,7 @@
 from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, status, Depends, Query
-
-from app.core.database import get_db
+from pydantic import BaseModel
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.models.trip import Trip
