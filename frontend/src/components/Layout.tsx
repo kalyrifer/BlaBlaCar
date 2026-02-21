@@ -11,7 +11,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="container">
           <div className="header-content">
             <Link to="/" className="logo">
-              🚗 BlaBlaCar
+              RoadMate
             </Link>
             
             <nav className="nav">

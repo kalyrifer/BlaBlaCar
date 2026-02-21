@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import heroImage from '../../photo-1768162485233-8aa1f27386fe.jpg';
+import roadImage from '../../photo-1767700871853-037a9dc30e81.jpg';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -18,142 +20,130 @@ export default function HomePage() {
     navigate(`/trips?${params.toString()}`);
   };
 
+  const features = [
+    {
+      title: 'Гибкие маршруты',
+      description: 'Добавляйте остановки и встречи на карте.',
+    },
+    {
+      title: 'Умный поиск',
+      description: 'Находите попутчиков по маршруту и времени.',
+    },
+    {
+      title: 'Доверие к водителю',
+      description: 'Отзывы и рейтинги помогут выбрать надёжного водителя.',
+    },
+    {
+      title: 'Гибкие заявки',
+      description: 'Отправляйте запросы на бронирование места.',
+    },
+    {
+      title: 'Планирование в пару кликов',
+      description: 'Создавайте и находите поездки быстро и легко.',
+    },
+  ];
+
+  const steps = [
+    {
+      number: '01',
+      title: 'Найдите поездку',
+      description: 'Укажите город отправления, прибытия и дату.',
+    },
+    {
+      number: '02',
+      title: 'Оставьте заявку',
+      description: 'Отправьте запрос водителю на бронирование места.',
+    },
+    {
+      number: '03',
+      title: 'Подтвердите детали',
+      description: 'Свяжитесь с водителем и договоритесь о поездке.',
+    },
+  ];
+
   return (
     <div className="home-page">
-      {/* Hero Section */}
-      <div style={{ 
-        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-        padding: '60px 20px',
-        borderRadius: '24px',
-        marginBottom: '40px',
-        textAlign: 'center',
-        color: 'white',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-        }}></div>
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <h1 style={{ 
-            fontSize: '48px', 
-            fontWeight: 800, 
-            marginBottom: '16px',
-            background: 'linear-gradient(135deg, #00a8e8 0%, #00d4ff 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
-            Найди попутчика
+      {/* Hero Section - Image on right */}
+      <section className="hero-side-by-side">
+        <div className="hero-content">
+          <span className="hero-label">Попутчики без лишнего шума</span>
+          <h1 className="hero-title">
+            RoadMate — ваш быстрый способ найти попутчиков и разделить дорогу.
           </h1>
-          <p style={{ 
-            fontSize: '20px', 
-            opacity: 0.9,
-            maxWidth: '500px',
-            margin: '0 auto'
-          }}>
-            Путешествуй с комфортом по выгодным ценам
+          <p className="hero-subtitle">
+            Мы соединяем водителей и пассажиров для удобных и выгодных поездок.
           </p>
         </div>
-      </div>
+        <div className="hero-image-container">
+          <img src={heroImage} alt="Парковка" className="hero-image" />
+        </div>
+      </section>
 
-      {/* Search Form */}
-      <div className="search-form">
-        <h2>Куда ты едешь?</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-row-3">
-            <div className="form-group">
-              <label>📍 Откуда</label>
-              <input
-                type="text"
-                placeholder="Город отправления"
-                value={searchData.from_city}
-                onChange={(e) => setSearchData({ ...searchData, from_city: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>🏁 Куда</label>
-              <input
-                type="text"
-                placeholder="Город прибытия"
-                value={searchData.to_city}
-                onChange={(e) => setSearchData({ ...searchData, to_city: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>📅 Дата</label>
-              <input
-                type="date"
-                value={searchData.date}
-                onChange={(e) => setSearchData({ ...searchData, date: e.target.value })}
-              />
-            </div>
+      {/* Features Grid */}
+      <section className="features">
+        {features.map((feature, index) => (
+          <div key={index} className="feature">
+            <h3 className="feature-title">{feature.title}</h3>
+            <p className="feature-description">{feature.description}</p>
           </div>
-          <button type="submit" className="btn btn-primary btn-lg">
-            🔍 Найти поездку
-          </button>
+        ))}
+      </section>
+
+      {/* How it Works - Image on left */}
+      <section className="how-it-works-side-by-side">
+        <div className="how-it-works-image-container">
+          <img src={roadImage} alt="Дорога" className="section-image" />
+        </div>
+        <div className="how-it-works-content">
+          <h2 className="section-title">Как это работает</h2>
+          <div className="steps">
+            {steps.map((step, index) => (
+              <div key={index} className="step">
+                <span className="step-number">{step.number}</span>
+                <div className="step-content">
+                  <h3 className="step-title">{step.title}</h3>
+                  <p className="step-description">{step.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="cta">
+        <h2 className="cta-title">Готовы стартовать?</h2>
+        <p className="cta-subtitle">
+          Забронируйте место или создайте свой маршрут уже сейчас.
+        </p>
+        <form onSubmit={handleSubmit} className="cta-form">
+          <div className="cta-form-row">
+            <input
+              type="text"
+              placeholder="Откуда"
+              value={searchData.from_city}
+              onChange={(e) => setSearchData({ ...searchData, from_city: e.target.value })}
+              className="cta-input"
+            />
+            <input
+              type="text"
+              placeholder="Куда"
+              value={searchData.to_city}
+              onChange={(e) => setSearchData({ ...searchData, to_city: e.target.value })}
+              className="cta-input"
+            />
+            <input
+              type="date"
+              value={searchData.date}
+              onChange={(e) => setSearchData({ ...searchData, date: e.target.value })}
+              className="cta-input"
+            />
+            <button type="submit" className="cta-button">
+              Найти поездку
+            </button>
+          </div>
         </form>
-      </div>
-
-      {/* Features */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-        gap: '24px',
-        marginTop: '40px'
-      }}>
-        <div className="card" style={{ textAlign: 'center', padding: '32px' }}>
-          <div style={{ 
-            fontSize: '48px', 
-            marginBottom: '16px',
-            background: 'linear-gradient(135deg, #00a8e8 0%, #00d4ff 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
-            💰
-          </div>
-          <h3 style={{ marginBottom: '8px', color: '#1a1a2e' }}>Экономия</h3>
-          <p style={{ color: '#6b7280' }}>
-            Путешествуй дешевле, чем на такси или автобусе
-          </p>
-        </div>
-        <div className="card" style={{ textAlign: 'center', padding: '32px' }}>
-          <div style={{ 
-            fontSize: '48px', 
-            marginBottom: '16px',
-            background: 'linear-gradient(135deg, #00a8e8 0%, #00d4ff 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
-            🚗
-          </div>
-          <h3 style={{ marginBottom: '8px', color: '#1a1a2e' }}>Комфорт</h3>
-          <p style={{ color: '#6b7280' }}>
-            Выбирай удобное время и маршрут
-          </p>
-        </div>
-        <div className="card" style={{ textAlign: 'center', padding: '32px' }}>
-          <div style={{ 
-            fontSize: '48px', 
-            marginBottom: '16px',
-            background: 'linear-gradient(135deg, #00a8e8 0%, #00d4ff 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
-            👥
-          </div>
-          <h3 style={{ marginBottom: '8px', color: '#1a1a2e' }}>Общение</h3>
-          <p style={{ color: '#6b7280' }}>
-            Познакомься с интересными людьми
-          </p>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }
