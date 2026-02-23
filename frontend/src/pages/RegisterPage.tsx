@@ -32,14 +32,14 @@ export default function RegisterPage() {
   return (
     <div className="auth-page">
       <div className="auth-form-container">
-        <h1>Присоединяйся! 🚀</h1>
+        <h1>Присоединяйся!</h1>
         <p className="subtitle">Создай аккаунт для поиска попутчиков</p>
         
         <form onSubmit={handleSubmit} className="auth-form">
           {error && <div className="error">{error}</div>}
           
           <div className="form-group">
-            <label>👤 Имя</label>
+            <label>Имя</label>
             <input
               type="text"
               placeholder="Как к тебе обращаться"
@@ -50,7 +50,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label>📧 Email</label>
+            <label>Email</label>
             <input
               type="email"
               placeholder="example@mail.ru"
@@ -61,7 +61,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label>📱 Телефон</label>
+            <label>Телефон</label>
             <input
               type="tel"
               placeholder="+7 999 123-45-67"
@@ -72,7 +72,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label>🔒 Пароль</label>
+            <label>Пароль</label>
             <input
               type="password"
               placeholder="Придумай пароль"

@@ -22,24 +22,22 @@ export default function HomePage() {
 
   const features = [
     {
-      title: 'Гибкие маршруты',
-      description: 'Добавляйте остановки и встречи на карте.',
-    },
-    {
       title: 'Умный поиск',
-      description: 'Находите попутчиков по маршруту и времени.',
+      description: 'Фильтры по цене, дате, количеству мест и времени отправления.',
     },
     {
       title: 'Доверие к водителю',
-      description: 'Отзывы и рейтинги помогут выбрать надёжного водителя.',
+      description: 'Профиль, телефоны и подробности о каждой поездке в одном месте.',
+      icon: '✓',
     },
     {
       title: 'Гибкие заявки',
-      description: 'Отправляйте запросы на бронирование места.',
+      description: 'Отправляйте запросы и управляйте бронированиями прямо в профиле.',
+      icon: '✎',
     },
     {
       title: 'Планирование в пару кликов',
-      description: 'Создавайте и находите поездки быстро и легко.',
+      description: 'Создавайте поездки, выбирайте точки встречи и описывайте маршрут.',
     },
   ];
 
@@ -73,6 +71,20 @@ export default function HomePage() {
           <p className="hero-subtitle">
             Мы соединяем водителей и пассажиров для удобных и выгодных поездок.
           </p>
+          <div className="hero-buttons">
+            <button 
+              className="btn btn-primary btn-find-trip" 
+              onClick={() => navigate('/trips')}
+            >
+              Найти поездку
+            </button>
+            <button 
+              className="btn btn-offer-ride" 
+              onClick={() => navigate('/create-trip')}
+            >
+              Предложить место
+            </button>
+          </div>
         </div>
         <div className="hero-image-container">
           <img src={heroImage} alt="Парковка" className="hero-image" />
@@ -82,7 +94,7 @@ export default function HomePage() {
       {/* Features Grid */}
       <section className="features">
         {features.map((feature, index) => (
-          <div key={index} className="feature">
+          <div key={index} className="feature-card">
             <h3 className="feature-title">{feature.title}</h3>
             <p className="feature-description">{feature.description}</p>
           </div>

@@ -48,7 +48,7 @@ export default function TripPage() {
   if (loading) {
     return (
       <div className="loading">
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚗</div>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
         Загрузка...
       </div>
     );
@@ -57,7 +57,7 @@ export default function TripPage() {
   if (!trip) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: '60px' }}>
-        <div style={{ fontSize: '64px', marginBottom: '16px' }}>😕</div>
+        <div style={{ fontSize: '64px', marginBottom: '16px' }}></div>
         <h3>Поездка не найдена</h3>
         <Link to="/" className="btn btn-primary" style={{ marginTop: '20px' }}>
           На главную
@@ -80,10 +80,10 @@ export default function TripPage() {
           <h1>{trip.from_city} → {trip.to_city}</h1>
           <div className="trip-meta">
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}>
-              📅 {trip.departure_date}
+              {trip.departure_date}
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              🕐 {trip.departure_time}
+              {trip.departure_time}
             </span>
           </div>
         </div>
@@ -120,10 +120,10 @@ export default function TripPage() {
             <h3>{trip.driver.name}</h3>
             {trip.driver.rating && (
               <p style={{ color: '#faad14', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                ⭐ {trip.driver.rating}
+                {trip.driver.rating}
               </p>
             )}
-            {trip.driver.phone && <p>📞 {trip.driver.phone}</p>}
+            {trip.driver.phone && <p> {trip.driver.phone}</p>}
           </div>
         </div>
 
@@ -160,7 +160,7 @@ export default function TripPage() {
             className="btn btn-primary"
             style={{ width: '100%', padding: '16px' }}
           >
-            🚀 Забронировать место
+            Забронировать место
           </button>
         ) : (
           <div style={{ 

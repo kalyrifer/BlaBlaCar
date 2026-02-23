@@ -14,46 +14,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               RoadMate
             </Link>
             
-            <nav className="nav">
-              <Link 
-                to="/" 
-                className={location.pathname === '/' ? 'active' : ''}
-              >
+            <nav className="nav nav-center">
+              <Link to="/trips" className={location.pathname === '/trips' ? 'active' : ''}>
                 Поиск
               </Link>
-              
-              {isAuthenticated && (
-                <>
-                  <Link 
-                    to="/create-trip" 
-                    className={location.pathname === '/create-trip' ? 'active' : ''}
-                  >
-                    Создать поездку
-                  </Link>
-                  <Link 
-                    to="/my-trips" 
-                    className={location.pathname === '/my-trips' ? 'active' : ''}
-                  >
-                    Мои поездки
-                  </Link>
-                  <Link 
-                    to="/notifications" 
-                    className={location.pathname === '/notifications' ? 'active' : ''}
-                  >
-                    🔔
-                  </Link>
-                  <Link 
-                    to="/profile" 
-                    className={location.pathname === '/profile' ? 'active' : ''}
-                  >
-                    👤 {user?.name}
-                  </Link>
-                  <button onClick={logout} className="btn btn-secondary btn-sm">
-                    Выйти
-                  </button>
-                </>
-              )}
-              
+              <Link to="/create-trip" className={location.pathname === '/create-trip' ? 'active' : ''}>
+                Создать
+              </Link>
+              <Link to="/my-trips" className={location.pathname === '/my-trips' ? 'active' : ''}>
+                Заявки
+              </Link>
+              <Link to="/profile" className={location.pathname === '/profile' ? 'active' : ''}>
+                Профиль
+              </Link>
+            </nav>
+            
+            <nav className="nav nav-right">
               {!isAuthenticated && (
                 <>
                   <Link to="/login" className={location.pathname === '/login' ? 'active' : ''}>

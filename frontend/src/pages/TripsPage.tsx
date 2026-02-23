@@ -31,7 +31,7 @@ export default function TripsPage() {
   if (loading) {
     return (
       <div className="loading">
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
         Поиск поездок...
       </div>
     );
@@ -57,7 +57,7 @@ export default function TripsPage() {
       
       {trips.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🚗</div>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}></div>
           <h3 style={{ marginBottom: '8px', color: '#1a1a2e' }}>Поездок не найдено</h3>
           <p style={{ color: '#6b7280', marginBottom: '24px' }}>
             Попробуйте изменить параметры поиска или поискать на другую дату
@@ -82,9 +82,9 @@ export default function TripsPage() {
                   <span className="city">{trip.to_city}</span>
                 </div>
                 <div className="trip-details">
-                  <span>📅 {trip.departure_date}</span>
-                  <span>🕐 {trip.departure_time}</span>
-                  <span>👤 {trip.driver.name}</span>
+                  <span>{trip.departure_date}</span>
+                  <span>{trip.departure_time}</span>
+                  <span>{trip.driver.name}</span>
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>

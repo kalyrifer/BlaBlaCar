@@ -32,14 +32,14 @@ export default function LoginPage() {
   return (
     <div className="auth-page">
       <div className="auth-form-container">
-        <h1>С возвращением! 👋</h1>
+        <h1>С возвращением!</h1>
         <p className="subtitle">Войди в свой аккаунт</p>
         
         <form onSubmit={handleSubmit} className="auth-form">
           {error && <div className="error">{error}</div>}
           
           <div className="form-group">
-            <label>📧 Email</label>
+            <label>Email</label>
             <input
               type="email"
               placeholder="example@mail.ru"
@@ -50,7 +50,7 @@ export default function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label>🔒 Пароль</label>
+            <label>Пароль</label>
             <input
               type="password"
               placeholder="Введите пароль"
