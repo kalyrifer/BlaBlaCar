@@ -16,6 +16,7 @@ from app.domain.enums import (
     is_valid_request_status_transition,
     InvalidStatusTransitionError
 )
+from app.background.worker import enqueue_notification
 
 
 class RequestCreate(BaseModel):
@@ -141,14 +142,17 @@ class RequestService:
         # Получение информации о пассажире
         passenger = await self._user_repo.get_by_id(passenger_id)
         
-        # Создание уведомления для водителя
-        await self._notification_repo.create({
+        # Отправка уведомления для водителя через background worker
+        passenger_name = passenger.name if passenger else "Пользователь"
+        enqueue_notification({
             "user_id": trip.driver_id,
-            "type": "request_received",
             "title": "Новая заявка",
-            "message": f"Пользователь {passenger.name} отправил заявку на вашу поездку" if passenger else "Новая заявка на вашу поездку",
-            "related_trip_id": trip_id,
-            "related_request_id": request.id
+            "message": f"Пользователь {passenger_name} отправил заявку на вашу поездку",
+            "notification_type": "request_received",
+            "metadata": {
+                "trip_id": str(trip_id),
+                "passenger_id": str(passenger_id)
+            }
         })
         
         return TripRequestResponse(
@@ -217,7 +221,7 @@ class RequestService:
             if new_status == RequestStatus.CONFIRMED:
                 await self._trip_repo.update_seats(request.trip_id, -request.seats_requested)
             
-            # Создание уведомления для пассажира
+            # Отправка уведомления для пассажира через background worker
             if new_status == RequestStatus.CONFIRMED:
                 notification_type = "request_confirmed"
                 notification_title = "Заявка подтверждена"
@@ -227,13 +231,15 @@ class RequestService:
                 notification_title = "Заявка отклонена"
                 notification_message = "Водитель отклонил вашу заявку на поездку"
             
-            await self._notification_repo.create({
+            enqueue_notification({
                 "user_id": request.passenger_id,
-                "type": notification_type,
                 "title": notification_title,
                 "message": notification_message,
-                "related_trip_id": request.trip_id,
-                "related_request_id": request.id
+                "notification_type": notification_type,
+                "metadata": {
+                    "trip_id": str(request.trip_id),
+                    "request_id": str(request.id)
+                }
             })
         
         # Получение информации о пассажире (вне блокировки)
@@ -319,4 +325,7 @@ class RequestService:
                 "created_at": req.created_at.isoformat()
             })
         
+        return result        
+        return result
+        return result
         return result
