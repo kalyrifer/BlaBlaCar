@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
 from uuid import UUID
+from datetime import datetime
 
 from app.db.models.trip import Trip
 
@@ -19,7 +20,8 @@ class ITripRepository(ABC):
         self, 
         from_city: str, 
         to_city: str, 
-        date: Optional[str] = None, 
+        date_from: Optional[datetime] = None,
+        date_to: Optional[datetime] = None,
         status: str = "active"
     ) -> List[Trip]:
         """Search trips by filters"""

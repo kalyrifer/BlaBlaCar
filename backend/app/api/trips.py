@@ -13,8 +13,7 @@ router = APIRouter()
 class CreateTripRequest(BaseModel):
     from_city: str
     to_city: str
-    departure_date: str
-    departure_time: str
+    departure_at: str  # ISO datetime string
     available_seats: int
     price_per_seat: int
     description: Optional[str] = None
@@ -23,8 +22,7 @@ class CreateTripRequest(BaseModel):
 class UpdateTripRequest(BaseModel):
     from_city: Optional[str] = None
     to_city: Optional[str] = None
-    departure_date: Optional[str] = None
-    departure_time: Optional[str] = None
+    departure_at: Optional[str] = None
     available_seats: Optional[int] = None
     price_per_seat: Optional[int] = None
     description: Optional[str] = None
@@ -40,8 +38,7 @@ async def create_trip(
         trip_create = TripCreate(
             from_city=request.from_city,
             to_city=request.to_city,
-            departure_date=request.departure_date,
-            departure_time=request.departure_time,
+            departure_at=request.departure_at,
             available_seats=request.available_seats,
             price_per_seat=request.price_per_seat,
             description=request.description
@@ -59,7 +56,8 @@ async def create_trip(
 async def list_trips(
     from_city: str = Query(..., description="Город отправления"),
     to_city: str = Query(..., description="Город прибытия"),
-    date: Optional[str] = Query(None, description="Дата поездки YYYY-MM-DD"),
+    date_from: Optional[str] = Query(None, description="Дата от (ISO datetime)"),
+    date_to: Optional[str] = Query(None, description="Дата до (ISO datetime)"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     trip_service: TripService = Depends(get_trip_service)
@@ -67,7 +65,8 @@ async def list_trips(
     filters = TripSearchFilters(
         from_city=from_city,
         to_city=to_city,
-        date=date
+        date_from=date_from,
+        date_to=date_to
     )
     result = await trip_service.search_trips(filters, page, page_size)
     return result

@@ -1,5 +1,5 @@
 """SQLAlchemy Trip ORM model"""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 from sqlalchemy import String, Integer, DateTime, ForeignKey
@@ -26,8 +26,10 @@ class Trip(Base):
     )
     from_city: Mapped[str] = mapped_column(String(255), nullable=False)
     to_city: Mapped[str] = mapped_column(String(255), nullable=False)
-    departure_date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
-    departure_time: Mapped[str] = mapped_column(String(5), nullable=False)   # HH:MM
+    departure_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), 
+        nullable=False
+    )
     available_seats: Mapped[int] = mapped_column(Integer, nullable=False)
     price_per_seat: Mapped[int] = mapped_column(Integer, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
@@ -35,10 +37,10 @@ class Trip(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 
         nullable=False, 
-        default=datetime.utcnow
+        default=lambda: datetime.now(timezone.utc)
     )
     updated_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), 
         nullable=True, 
-        onupdate=datetime.utcnow
+        onupdate=lambda: datetime.now(timezone.utc)
     )

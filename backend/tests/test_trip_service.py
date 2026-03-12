@@ -122,8 +122,7 @@ class TestTripService:
         trip_create = TripCreate(
             from_city="Moscow",
             to_city="Saint Petersburg",
-            departure_date="2024-06-01",
-            departure_time="10:00",
+            departure_at="2024-06-01T10:00:00",
             available_seats=3,
             price_per_seat=1500,
             description="Comfortable trip"

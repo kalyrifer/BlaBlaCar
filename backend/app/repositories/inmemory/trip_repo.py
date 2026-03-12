@@ -1,6 +1,6 @@
 """In-memory Trip Repository Implementation with locking"""
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from uuid import UUID, uuid4
 
@@ -16,13 +16,12 @@ class TripData:
     driver_id: UUID
     from_city: str
     to_city: str
-    departure_date: str
-    departure_time: str
+    departure_at: datetime
     available_seats: int
     price_per_seat: int
     description: Optional[str] = None
     status: str = "active"
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
 
 
@@ -35,13 +34,17 @@ class InMemoryTripRepository(ITripRepository):
     
     def _to_trip_model(self, data: TripData) -> Trip:
         """Convert internal data to Trip ORM model"""
+        # Ensure departure_at is timezone-aware UTC
+        departure_at = data.departure_at
+        if departure_at.tzinfo is None:
+            departure_at = departure_at.replace(tzinfo=timezone.utc)
+        
         return Trip(
             id=data.id,
             driver_id=data.driver_id,
             from_city=data.from_city,
             to_city=data.to_city,
-            departure_date=data.departure_date,
-            departure_time=data.departure_time,
+            departure_at=departure_at,
             available_seats=data.available_seats,
             price_per_seat=data.price_per_seat,
             description=data.description,
@@ -58,7 +61,8 @@ class InMemoryTripRepository(ITripRepository):
         self, 
         from_city: str, 
         to_city: str, 
-        date: Optional[str] = None, 
+        date_from: Optional[datetime] = None,
+        date_to: Optional[datetime] = None,
         status: str = "active"
     ) -> List[Trip]:
         """Search trips by filters"""
@@ -67,12 +71,41 @@ class InMemoryTripRepository(ITripRepository):
             if (data.from_city == from_city and 
                 data.to_city == to_city and
                 data.status == status):
-                if date is None or data.departure_date == date:
-                    results.append(self._to_trip_model(data))
+                
+                # Date range filtering
+                departure_at = data.departure_at
+                if departure_at.tzinfo is None:
+                    departure_at = departure_at.replace(tzinfo=timezone.utc)
+                
+                if date_from is not None:
+                    # Compare with timezone-aware datetime
+                    if departure_at < date_from:
+                        continue
+                
+                if date_to is not None:
+                    # Compare with timezone-aware datetime
+                    if departure_at > date_to:
+                        continue
+                
+                results.append(self._to_trip_model(data))
         return results
     
     async def create(self, trip_data: dict) -> Trip:
         """Create new trip"""
+        # Handle departure_at - ensure it's timezone-aware UTC
+        departure_at = trip_data.get("departure_at")
+        if departure_at is None:
+            raise ValueError("departure_at is required")
+        
+        if isinstance(departure_at, str):
+            # Parse string to datetime
+            departure_at = datetime.fromisoformat(departure_at.replace('Z', '+00:00'))
+        
+        if departure_at.tzinfo is None:
+            departure_at = departure_at.replace(tzinfo=timezone.utc)
+        else:
+            departure_at = departure_at.astimezone(timezone.utc)
+        
         # Use provided ID if present, otherwise generate new one
         trip_id = trip_data.get("id") or uuid4()
         data = TripData(
@@ -80,8 +113,7 @@ class InMemoryTripRepository(ITripRepository):
             driver_id=trip_data["driver_id"],
             from_city=trip_data["from_city"],
             to_city=trip_data["to_city"],
-            departure_date=trip_data["departure_date"],
-            departure_time=trip_data["departure_time"],
+            departure_at=departure_at,
             available_seats=trip_data["available_seats"],
             price_per_seat=trip_data["price_per_seat"],
             description=trip_data.get("description"),
@@ -96,11 +128,22 @@ class InMemoryTripRepository(ITripRepository):
         if not data:
             return None
         
+        # Handle departure_at update
+        if "departure_at" in trip_data:
+            departure_at = trip_data["departure_at"]
+            if isinstance(departure_at, str):
+                departure_at = datetime.fromisoformat(departure_at.replace('Z', '+00:00'))
+            if departure_at.tzinfo is None:
+                departure_at = departure_at.replace(tzinfo=timezone.utc)
+            else:
+                departure_at = departure_at.astimezone(timezone.utc)
+            trip_data["departure_at"] = departure_at
+        
         for key, value in trip_data.items():
             if hasattr(data, key):
                 setattr(data, key, value)
         
-        data.updated_at = datetime.utcnow()
+        data.updated_at = datetime.now(timezone.utc)
         return self._to_trip_model(data)
     
     async def delete(self, trip_id: UUID) -> bool:
@@ -130,7 +173,7 @@ class InMemoryTripRepository(ITripRepository):
                 raise ValueError("Not enough available seats")
             
             data.available_seats = new_seats
-            data.updated_at = datetime.utcnow()
+            data.updated_at = datetime.now(timezone.utc)
             return self._to_trip_model(data)
     
     async def lock_for_update(self, trip_id: UUID) -> Optional[Trip]:
