@@ -6,6 +6,9 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.core.database import get_db
 from app.core.security import decode_token
 from app.models.user import User
+from app.services.auth_service import AuthService
+from app.services.trip_service import TripService
+from app.services.request_service import RequestService
 
 security = HTTPBearer()
 
@@ -40,3 +43,26 @@ async def get_current_user(
         )
     
     return user
+
+
+async def get_auth_service() -> AuthService:
+    """Получить экземпляр AuthService"""
+    db = get_db()
+    return AuthService(user_repo=db.users)
+
+
+async def get_trip_service() -> TripService:
+    """Получить экземпляр TripService"""
+    db = get_db()
+    return TripService(trip_repo=db.trips, user_repo=db.users)
+
+
+async def get_request_service() -> RequestService:
+    """Получить экземпляр RequestService"""
+    db = get_db()
+    return RequestService(
+        request_repo=db.requests,
+        trip_repo=db.trips,
+        notification_repo=db.notifications,
+        user_repo=db.users
+    )

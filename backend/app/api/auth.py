@@ -1,10 +1,9 @@
 """Auth endpoints"""
-from fastapi import APIRouter, HTTPException, status, Response, Depends
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, EmailStr
 
-from app.core.database import get_db
-from app.core.security import get_password_hash, verify_password, create_access_token
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_auth_service
+from app.services.auth_service import AuthService, UserCreate
 from app.models.user import User
 
 router = APIRouter()
@@ -22,87 +21,39 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class UserResponse(BaseModel):
-    id: str
-    email: str
-    name: str
-    phone: str
-    avatar_url: str | None = None
-    rating: float | None = None
-
-
 @router.post("/register")
-async def register(request: RegisterRequest):
-    db = get_db()
-    
-    # Check if email already exists
-    existing = await db.users.get_by_email(request.email)
-    if existing:
+async def register(request: RegisterRequest, auth_service: AuthService = Depends(get_auth_service)):
+    try:
+        user_create = UserCreate(
+            email=request.email,
+            password=request.password,
+            name=request.name,
+            phone=request.phone
+        )
+        result = await auth_service.register(user_create)
+        return result
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail=str(e)
         )
-    
-    # Create user
-    user = await db.users.create({
-        "email": request.email,
-        "password_hash": get_password_hash(request.password),
-        "name": request.name,
-        "phone": request.phone
-    })
-    
-    # Generate token
-    access_token = create_access_token({
-        "sub": str(user.id),
-        "email": user.email,
-        "name": user.name
-    })
-    
-    return {
-        "id": str(user.id),
-        "email": user.email,
-        "name": user.name,
-        "phone": user.phone,
-        "avatar_url": user.avatar_url,
-        "rating": user.rating,
-        "created_at": user.created_at.isoformat()
-    }
 
 
 @router.post("/login")
-async def login(request: LoginRequest, response: Response):
-    db = get_db()
-    
-    user = await db.users.get_by_email(request.email)
-    if not user or not verify_password(request.password, user.password_hash):
+async def login(request: LoginRequest, auth_service: AuthService = Depends(get_auth_service)):
+    try:
+        result = await auth_service.login(request.email, request.password)
+        return result
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
+            detail=str(e)
         )
-    
-    access_token = create_access_token({
-        "sub": str(user.id),
-        "email": user.email,
-        "name": user.name
-    })
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": str(user.id),
-            "email": user.email,
-            "name": user.name,
-            "phone": user.phone,
-            "avatar_url": user.avatar_url,
-            "rating": user.rating
-        }
-    }
 
 
 @router.post("/logout")
-async def logout(response: Response):
-    response.delete_cookie("access_token")
+async def logout():
+    # JWT tokens are stateless, logout is handled on client side
     return {"message": "Logged out"}
 
 
