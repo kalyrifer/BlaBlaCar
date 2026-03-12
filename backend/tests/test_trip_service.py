@@ -58,13 +58,20 @@ class MockTripRepository:
     async def create(self, trip_data: dict):
         from app.models.trip import Trip
         trip_id = UUID("22345678-1234-5678-1234-567812345678")
+        # Handle departure_at - convert to datetime if string
+        departure_at = trip_data.get("departure_at")
+        if isinstance(departure_at, str):
+            from datetime import timezone
+            departure_at = datetime.fromisoformat(departure_at.replace('Z', '+00:00'))
+        elif departure_at is None:
+            departure_at = datetime.now(timezone.utc)
+        
         trip = Trip(
             id=trip_id,
             driver_id=trip_data["driver_id"],
             from_city=trip_data["from_city"],
             to_city=trip_data["to_city"],
-            departure_date=trip_data["departure_date"],
-            departure_time=trip_data["departure_time"],
+            departure_at=departure_at,
             available_seats=trip_data["available_seats"],
             price_per_seat=trip_data["price_per_seat"],
             description=trip_data.get("description"),
@@ -147,8 +154,7 @@ class TestTripService:
         trip_create = TripCreate(
             from_city="Moscow",
             to_city="Saint Petersburg",
-            departure_date="2024-06-01",
-            departure_time="10:00",
+            departure_at="2024-06-01T10:00:00",
             available_seats=3,
             price_per_seat=1500
         )

@@ -9,6 +9,7 @@ from app.models.user import User
 from app.services.auth_service import AuthService
 from app.services.trip_service import TripService
 from app.services.request_service import RequestService
+from app.repositories.interfaces import IRefreshTokenRepository
 
 security = HTTPBearer()
 
@@ -66,3 +67,9 @@ async def get_request_service() -> RequestService:
         notification_repo=db.notifications,
         user_repo=db.users
     )
+
+
+async def get_refresh_token_repo() -> IRefreshTokenRepository:
+    """Получить экземпляр RefreshTokenRepository"""
+    db = get_db()
+    return db.refresh_tokens
