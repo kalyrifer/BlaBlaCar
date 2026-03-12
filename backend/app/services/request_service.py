@@ -11,6 +11,11 @@ from app.repositories.interfaces import (
 )
 from app.repositories.inmemory.locks import LockManager
 from app.models.request import RequestStatus
+from app.domain.enums import (
+    RequestStatus as DomainRequestStatus,
+    is_valid_request_status_transition,
+    InvalidStatusTransitionError
+)
 
 
 class RequestCreate(BaseModel):
@@ -79,6 +84,24 @@ class RequestService:
         self._notification_repo = notification_repo
         self._user_repo = user_repo
         self._lock_manager = lock_manager or LockManager()
+    
+    def is_valid_transition(self, old_status: str, new_status: str) -> bool:
+        """Проверка допустимости перехода статуса заявки
+        
+        Args:
+            old_status: Текущий статус заявки
+            new_status: Новый статус заявки
+            
+        Returns:
+            True если переход допустим, иначе False
+        """
+        try:
+            old = DomainRequestStatus(old_status)
+            new = DomainRequestStatus(new_status)
+            return is_valid_request_status_transition(old, new)
+        except ValueError:
+            # Если передан неверный статус
+            return False
     
     async def create_request(
         self, 
@@ -167,6 +190,14 @@ class RequestService:
         if trip.driver_id != driver_id:
             raise ForbiddenError("Not authorized to update this request")
         
+        # Проверка валидности перехода статуса
+        old_status = DomainRequestStatus(request.status)
+        new_status_enum = DomainRequestStatus(new_status)
+        if not is_valid_request_status_transition(old_status, new_status_enum):
+            raise InvalidStatusTransitionError(
+                f"Invalid transition from {request.status} to {new_status}"
+            )
+        
         # Критический блок с блокировкой: проверка мест и обновление статуса
         async with self._lock_manager.lock_for("trip", str(request.trip_id)):
             # Повторное чтение trip внутри блокировки для актуальных данных
@@ -175,7 +206,7 @@ class RequestService:
                 raise TripNotFoundError("Trip not found")
             
             # При подтверждении проверяем доступность мест
-            if new_status == RequestStatus.CONFIRMED:
+            if new_status_enum == DomainRequestStatus.CONFIRMED:
                 if trip.available_seats < request.seats_requested:
                     raise NotEnoughSeatsError("Not enough available seats")
             

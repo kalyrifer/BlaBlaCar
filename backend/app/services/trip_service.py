@@ -4,6 +4,10 @@ from typing import Optional, List, Any
 from pydantic import BaseModel
 
 from app.repositories.interfaces import ITripRepository, IUserRepository
+from app.domain.enums import (
+    TripStatus as DomainTripStatus,
+    is_valid_trip_status_transition,
+)
 
 
 class TripCreate(BaseModel):
@@ -65,6 +69,24 @@ class TripService:
     def __init__(self, trip_repo: ITripRepository, user_repo: IUserRepository):
         self._trip_repo = trip_repo
         self._user_repo = user_repo
+    
+    def is_valid_transition(self, old_status: str, new_status: str) -> bool:
+        """Проверка допустимости перехода статуса поездки
+        
+        Args:
+            old_status: Текущий статус поездки
+            new_status: Новый статус поездки
+            
+        Returns:
+            True если переход допустим, иначе False
+        """
+        try:
+            old = DomainTripStatus(old_status)
+            new = DomainTripStatus(new_status)
+            return is_valid_trip_status_transition(old, new)
+        except ValueError:
+            # Если передан неверный статус
+            return False
     
     async def create_trip(self, driver_id: UUID, trip_create: TripCreate) -> TripResponse:
         """Создание новой поездки"""
