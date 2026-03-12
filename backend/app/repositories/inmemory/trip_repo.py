@@ -73,7 +73,8 @@ class InMemoryTripRepository(ITripRepository):
     
     async def create(self, trip_data: dict) -> Trip:
         """Create new trip"""
-        trip_id = uuid4()
+        # Use provided ID if present, otherwise generate new one
+        trip_id = trip_data.get("id") or uuid4()
         data = TripData(
             id=trip_id,
             driver_id=trip_data["driver_id"],

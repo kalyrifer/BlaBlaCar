@@ -9,6 +9,7 @@ from app.repositories.interfaces import (
     INotificationRepository,
     IUserRepository
 )
+from app.repositories.inmemory.locks import LockManager
 from app.models.request import RequestStatus
 
 
@@ -70,12 +71,14 @@ class RequestService:
         request_repo: IRequestRepository,
         trip_repo: ITripRepository,
         notification_repo: INotificationRepository,
-        user_repo: IUserRepository
+        user_repo: IUserRepository,
+        lock_manager: Optional[LockManager] = None
     ):
         self._request_repo = request_repo
         self._trip_repo = trip_repo
         self._notification_repo = notification_repo
         self._user_repo = user_repo
+        self._lock_manager = lock_manager or LockManager()
     
     async def create_request(
         self, 
@@ -149,7 +152,7 @@ class RequestService:
         request_id: UUID, 
         new_status: str
     ) -> TripRequestResponse:
-        """Обновление статуса заявки (только водитель)"""
+        """Обновление статуса заявки (только водитель) с использованием блокировки"""
         # Получение заявки
         request = await self._request_repo.get_by_id(request_id)
         if not request:
@@ -164,38 +167,45 @@ class RequestService:
         if trip.driver_id != driver_id:
             raise ForbiddenError("Not authorized to update this request")
         
-        # При подтверждении проверяем доступность мест
-        if new_status == RequestStatus.CONFIRMED:
-            if trip.available_seats < request.seats_requested:
-                raise NotEnoughSeatsError("Not enough available seats")
+        # Критический блок с блокировкой: проверка мест и обновление статуса
+        async with self._lock_manager.lock_for("trip", str(request.trip_id)):
+            # Повторное чтение trip внутри блокировки для актуальных данных
+            trip = await self._trip_repo.get_by_id(request.trip_id)
+            if not trip:
+                raise TripNotFoundError("Trip not found")
+            
+            # При подтверждении проверяем доступность мест
+            if new_status == RequestStatus.CONFIRMED:
+                if trip.available_seats < request.seats_requested:
+                    raise NotEnoughSeatsError("Not enough available seats")
+            
+            # Обновление статуса заявки
+            updated_request = await self._request_repo.update_status(request_id, new_status)
+            
+            # Уменьшение доступных мест при подтверждении (внутри того же критического блока)
+            if new_status == RequestStatus.CONFIRMED:
+                await self._trip_repo.update_seats(request.trip_id, -request.seats_requested)
+            
+            # Создание уведомления для пассажира
+            if new_status == RequestStatus.CONFIRMED:
+                notification_type = "request_confirmed"
+                notification_title = "Заявка подтверждена"
+                notification_message = "Водитель подтвердил вашу заявку на поездку"
+            else:
+                notification_type = "request_rejected"
+                notification_title = "Заявка отклонена"
+                notification_message = "Водитель отклонил вашу заявку на поездку"
+            
+            await self._notification_repo.create({
+                "user_id": request.passenger_id,
+                "type": notification_type,
+                "title": notification_title,
+                "message": notification_message,
+                "related_trip_id": request.trip_id,
+                "related_request_id": request.id
+            })
         
-        # Обновление статуса заявки
-        updated_request = await self._request_repo.update_status(request_id, new_status)
-        
-        # Создание уведомления для пассажира
-        if new_status == RequestStatus.CONFIRMED:
-            notification_type = "request_confirmed"
-            notification_title = "Заявка подтверждена"
-            notification_message = "Водитель подтвердил вашу заявку на поездку"
-        else:
-            notification_type = "request_rejected"
-            notification_title = "Заявка отклонена"
-            notification_message = "Водитель отклонил вашу заявку на поездку"
-        
-        await self._notification_repo.create({
-            "user_id": request.passenger_id,
-            "type": notification_type,
-            "title": notification_title,
-            "message": notification_message,
-            "related_trip_id": request.trip_id,
-            "related_request_id": request.id
-        })
-        
-        # Уменьшение доступных мест при подтверждении
-        if new_status == RequestStatus.CONFIRMED:
-            await self._trip_repo.update_seats(request.trip_id, -request.seats_requested)
-        
-        # Получение информации о пассажире
+        # Получение информации о пассажире (вне блокировки)
         passenger = await self._user_repo.get_by_id(request.passenger_id)
         
         return TripRequestResponse(

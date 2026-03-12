@@ -62,7 +62,8 @@ class InMemoryRequestRepository(IRequestRepository):
     
     async def create(self, request_data: dict) -> TripRequest:
         """Create new request"""
-        request_id = uuid4()
+        # Use provided ID if present, otherwise generate new one
+        request_id = request_data.get("id") or uuid4()
         data = RequestData(
             id=request_id,
             trip_id=request_data["trip_id"],
