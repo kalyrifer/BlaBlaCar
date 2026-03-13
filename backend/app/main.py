@@ -5,7 +5,8 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import auth, trips, requests, users, notifications
@@ -16,6 +17,14 @@ from app.core.database import (
     get_request_repo, 
     get_notification_repo,
     get_refresh_token_repo
+)
+from app.core.exceptions import (
+    NotFoundError,
+    ForbiddenError,
+    NotEnoughSeatsError,
+    InvalidStatusTransitionError,
+    UserAlreadyExistsError,
+    InvalidCredentialsError
 )
 from app.background.worker import (
     get_notification_queue,
@@ -81,6 +90,62 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Exception handlers for domain exceptions
+@app.exception_handler(NotFoundError)
+async def not_found_error_handler(request: Request, exc: NotFoundError):
+    """Handle NotFoundError exceptions -> HTTP 404"""
+    return JSONResponse(
+        status_code=404,
+        content={"detail": exc.message}
+    )
+
+
+@app.exception_handler(ForbiddenError)
+async def forbidden_error_handler(request: Request, exc: ForbiddenError):
+    """Handle ForbiddenError exceptions -> HTTP 403"""
+    return JSONResponse(
+        status_code=403,
+        content={"detail": exc.message}
+    )
+
+
+@app.exception_handler(NotEnoughSeatsError)
+async def not_enough_seats_error_handler(request: Request, exc: NotEnoughSeatsError):
+    """Handle NotEnoughSeatsError exceptions -> HTTP 409"""
+    return JSONResponse(
+        status_code=409,
+        content={"detail": exc.message}
+    )
+
+
+@app.exception_handler(InvalidStatusTransitionError)
+async def invalid_status_transition_handler(request: Request, exc: InvalidStatusTransitionError):
+    """Handle InvalidStatusTransitionError exceptions -> HTTP 400"""
+    return JSONResponse(
+        status_code=400,
+        content={"detail": exc.message}
+    )
+
+
+@app.exception_handler(UserAlreadyExistsError)
+async def user_already_exists_handler(request: Request, exc: UserAlreadyExistsError):
+    """Handle UserAlreadyExistsError exceptions -> HTTP 400"""
+    return JSONResponse(
+        status_code=400,
+        content={"detail": exc.message}
+    )
+
+
+@app.exception_handler(InvalidCredentialsError)
+async def invalid_credentials_handler(request: Request, exc: InvalidCredentialsError):
+    """Handle InvalidCredentialsError exceptions -> HTTP 401"""
+    return JSONResponse(
+        status_code=401,
+        content={"detail": exc.message}
+    )
+
 
 # Роутеры
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])

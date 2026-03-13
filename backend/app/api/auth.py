@@ -9,6 +9,7 @@ from app.services.auth_service import AuthService, UserCreate
 from app.repositories.interfaces import IRefreshTokenRepository
 from app.models.user import User
 from app.core.security import create_access_token, create_refresh_token
+from app.core.exceptions import UserAlreadyExistsError, InvalidCredentialsError
 
 router = APIRouter()
 
@@ -37,20 +38,14 @@ class TokenResponse(BaseModel):
 
 @router.post("/register")
 async def register(request: RegisterRequest, auth_service: AuthService = Depends(get_auth_service)):
-    try:
-        user_create = UserCreate(
-            email=request.email,
-            password=request.password,
-            name=request.name,
-            phone=request.phone
-        )
-        result = await auth_service.register(user_create)
-        return result
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+    user_create = UserCreate(
+        email=request.email,
+        password=request.password,
+        name=request.name,
+        phone=request.phone
+    )
+    result = await auth_service.register(user_create)
+    return result
 
 
 @router.post("/login")
@@ -59,29 +54,23 @@ async def login(
     auth_service: AuthService = Depends(get_auth_service),
     refresh_token_repo: IRefreshTokenRepository = Depends(get_refresh_token_repo)
 ):
-    try:
-        result = await auth_service.login(request.email, request.password)
-        
-        # Generate refresh token
-        raw_token, hashed_token = create_refresh_token(result["id"])
-        
-        # Store hashed token
-        await refresh_token_repo.create({
-            "user_id": UUID(result["id"]),
-            "hashed_token": hashed_token,
-            "expires_in_days": 7
-        })
-        
-        return {
-            "access_token": result["access_token"],
-            "refresh_token": raw_token,
-            "token_type": "bearer"
-        }
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
-        )
+    result = await auth_service.login(request.email, request.password)
+    
+    # Generate refresh token
+    raw_token, hashed_token = create_refresh_token(result.user.id)
+    
+    # Store hashed token
+    await refresh_token_repo.create({
+        "user_id": UUID(result.user.id),
+        "hashed_token": hashed_token,
+        "expires_in_days": 7
+    })
+    
+    return {
+        "access_token": result.access_token,
+        "refresh_token": raw_token,
+        "token_type": "bearer"
+    }
 
 
 @router.post("/refresh", response_model=TokenResponse)

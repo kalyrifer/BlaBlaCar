@@ -5,7 +5,15 @@ from fastapi import APIRouter, HTTPException, status, Depends, Query
 from pydantic import BaseModel
 from app.api.deps import get_current_user, get_trip_service
 from app.models.user import User
-from app.services.trip_service import TripService, TripCreate, TripSearchFilters, TripNotFoundError, ForbiddenError
+from app.services.trip_service import TripService, TripCreate, TripSearchFilters
+from app.core.exceptions import NotFoundError, ForbiddenError, NotEnoughSeatsError
+from app.services.request_service import RequestService, UserAlreadyExistsError
+
+
+# Re-export for backward compatibility
+TripNotFoundError = NotFoundError
+RequestNotFoundError = NotFoundError
+
 
 router = APIRouter()
 
@@ -122,14 +130,9 @@ async def update_trip(
     current_user: User = Depends(get_current_user),
     trip_service: TripService = Depends(get_trip_service)
 ):
-    try:
-        update_data = request.model_dump(exclude_unset=True)
-        result = await trip_service.update_trip(current_user.id, UUID(trip_id), update_data)
-        return result
-    except TripNotFoundError:
-        raise HTTPException(status_code=404, detail="Trip not found")
-    except ForbiddenError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+    update_data = request.model_dump(exclude_unset=True)
+    result = await trip_service.update_trip(current_user.id, UUID(trip_id), update_data)
+    return result
 
 
 @router.delete("/{trip_id}")
@@ -138,13 +141,8 @@ async def delete_trip(
     current_user: User = Depends(get_current_user),
     trip_service: TripService = Depends(get_trip_service)
 ):
-    try:
-        await trip_service.delete_or_cancel_trip(current_user.id, UUID(trip_id))
-        return {"message": "Trip deleted"}
-    except TripNotFoundError:
-        raise HTTPException(status_code=404, detail="Trip not found")
-    except ForbiddenError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+    await trip_service.delete_or_cancel_trip(current_user.id, UUID(trip_id))
+    return {"message": "Trip deleted"}
 
 
 @router.post("/{trip_id}/requests")
@@ -155,27 +153,17 @@ async def create_request(
     current_user: User = Depends(get_current_user),
     trip_service: TripService = Depends(get_trip_service)
 ):
-    from app.services.request_service import RequestService, RequestNotFoundError, ForbiddenError, NotEnoughSeatsError, RequestAlreadyExistsError
     from app.api.deps import get_request_service
     
     request_service: RequestService = await get_request_service()
     
-    try:
-        result = await request_service.create_request(
-            passenger_id=current_user.id,
-            trip_id=UUID(trip_id),
-            seats=seats_requested,
-            message=message
-        )
-        return result
-    except RequestNotFoundError:
-        raise HTTPException(status_code=404, detail="Trip not found")
-    except (ForbiddenError, ValueError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except NotEnoughSeatsError:
-        raise HTTPException(status_code=400, detail="Not enough available seats")
-    except RequestAlreadyExistsError:
-        raise HTTPException(status_code=409, detail="Request already sent")
+    result = await request_service.create_request(
+        passenger_id=current_user.id,
+        trip_id=UUID(trip_id),
+        seats=seats_requested,
+        message=message
+    )
+    return result
 
 
 @router.get("/{trip_id}/requests")
@@ -185,20 +173,14 @@ async def get_trip_requests(
     trip_service: TripService = Depends(get_trip_service)
 ):
     from app.api.deps import get_request_service
-    from app.services.request_service import RequestService, TripNotFoundError, ForbiddenError
     
     request_service: RequestService = await get_request_service()
     
-    try:
-        result = await request_service.get_requests_by_trip(UUID(trip_id), current_user.id)
-        return {
-            "items": result,
-            "total": len(result),
-            "page": 1,
-            "page_size": 20,
-            "pages": 1
-        }
-    except TripNotFoundError:
-        raise HTTPException(status_code=404, detail="Trip not found")
-    except ForbiddenError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+    result = await request_service.get_requests_by_trip(UUID(trip_id), current_user.id)
+    return {
+        "items": result,
+        "total": len(result),
+        "page": 1,
+        "page_size": 20,
+        "pages": 1
+    }

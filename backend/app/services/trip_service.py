@@ -14,18 +14,11 @@ from app.schemas.trip import (
     TripResponse,
     PaginatedTripsResponse,
 )
+from app.core.exceptions import NotFoundError, ForbiddenError
 
 
-class TripNotFoundError(Exception):
-    """Поездка не найдена"""
-    pass
-
-
-class ForbiddenError(Exception):
-    """Доступ запрещен"""
-    pass
-
-
+# Re-export for backward compatibility
+TripNotFoundError = NotFoundError
 
 
 class TripService:
@@ -139,7 +132,7 @@ class TripService:
         """Удаление/отмена поездки (только водитель)"""
         trip = await self._trip_repo.get_by_id(trip_id)
         if not trip:
-            raise TripNotFoundError("Trip not found")
+            raise NotFoundError("Trip not found")
         
         if trip.driver_id != driver_id:
             raise ForbiddenError("Not authorized to delete this trip")

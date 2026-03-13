@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.exceptions import UserAlreadyExistsError, InvalidCredentialsError
 from app.repositories.interfaces import IUserRepository
 
 
@@ -44,7 +45,7 @@ class AuthService:
         # Проверка, что email уже не существует
         existing = await self._user_repo.get_by_email(user_create.email)
         if existing:
-            raise ValueError("Email already registered")
+            raise UserAlreadyExistsError("Email already registered")
         
         # Создание пользователя
         user = await self._user_repo.create({
@@ -69,7 +70,7 @@ class AuthService:
         user = await self._user_repo.get_by_email(email)
         
         if not user or not verify_password(password, user.password_hash):
-            raise ValueError("Invalid credentials")
+            raise InvalidCredentialsError("Invalid credentials")
         
         # Генерация токена
         access_token = create_access_token({

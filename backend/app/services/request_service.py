@@ -14,9 +14,22 @@ from app.models.request import RequestStatus
 from app.domain.enums import (
     RequestStatus as DomainRequestStatus,
     is_valid_request_status_transition,
-    InvalidStatusTransitionError
+    InvalidStatusTransitionError as DomainInvalidStatusTransitionError
 )
 from app.background.worker import enqueue_notification
+from app.core.exceptions import (
+    NotFoundError,
+    ForbiddenError,
+    NotEnoughSeatsError,
+    InvalidStatusTransitionError,
+    UserAlreadyExistsError
+)
+
+
+# Re-export for backward compatibility
+RequestNotFoundError = NotFoundError
+TripNotFoundError = NotFoundError
+RequestAlreadyExistsError = UserAlreadyExistsError
 
 
 class RequestCreate(BaseModel):
@@ -44,33 +57,13 @@ class TripRequestResponse(BaseModel):
     updated_at: Optional[str] = None
 
 
-class RequestNotFoundError(Exception):
-    """Заявка не найдена"""
-    pass
-
-
-class TripNotFoundError(Exception):
-    """Поездка не найдена"""
-    pass
-
-
-class ForbiddenError(Exception):
-    """Доступ запрещен"""
-    pass
-
-
-class NotEnoughSeatsError(Exception):
-    """Недостаточно мест"""
-    pass
-
-
-class RequestAlreadyExistsError(Exception):
-    """Заявка уже существует"""
-    pass
-
-
 class RequestService:
     """Сервис для работы с заявками"""
+    
+    # Re-export exceptions for backward compatibility with API layer
+    RequestNotFoundError = NotFoundError
+    TripNotFoundError = NotFoundError
+    RequestAlreadyExistsError = UserAlreadyExistsError
     
     def __init__(
         self, 
@@ -115,7 +108,7 @@ class RequestService:
         # Проверка существования поездки
         trip = await self._trip_repo.get_by_id(trip_id)
         if not trip:
-            raise TripNotFoundError("Trip not found")
+            raise NotFoundError("Trip not found")
         
         # Нельзя отправлять заявку на свою поездку
         if trip.driver_id == passenger_id:
@@ -124,7 +117,7 @@ class RequestService:
         # Проверка, что заявка уже не отправлена
         exists = await self._request_repo.exists(trip_id, passenger_id)
         if exists:
-            raise RequestAlreadyExistsError("Request already sent")
+            raise UserAlreadyExistsError("Request already sent")
         
         # Проверка доступности мест
         if trip.available_seats < seats:
@@ -183,12 +176,12 @@ class RequestService:
         # Получение заявки
         request = await self._request_repo.get_by_id(request_id)
         if not request:
-            raise RequestNotFoundError("Request not found")
+            raise NotFoundError("Request not found")
         
         # Получение поездки
         trip = await self._trip_repo.get_by_id(request.trip_id)
         if not trip:
-            raise TripNotFoundError("Trip not found")
+            raise NotFoundError("Trip not found")
         
         # Проверка прав (только водитель может обновлять статус)
         if trip.driver_id != driver_id:
@@ -207,7 +200,7 @@ class RequestService:
             # Повторное чтение trip внутри блокировки для актуальных данных
             trip = await self._trip_repo.get_by_id(request.trip_id)
             if not trip:
-                raise TripNotFoundError("Trip not found")
+                raise NotFoundError("Trip not found")
             
             # При подтверждении проверяем доступность мест
             if new_status_enum == DomainRequestStatus.CONFIRMED:
@@ -268,7 +261,7 @@ class RequestService:
         # Проверка прав
         trip = await self._trip_repo.get_by_id(trip_id)
         if not trip:
-            raise TripNotFoundError("Trip not found")
+            raise NotFoundError("Trip not found")
         
         if trip.driver_id != driver_id:
             raise ForbiddenError("Not the owner of this trip")

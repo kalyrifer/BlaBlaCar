@@ -6,7 +6,13 @@ from pydantic import BaseModel
 
 from app.api.deps import get_current_user, get_request_service
 from app.models.user import User
-from app.services.request_service import RequestService, RequestNotFoundError, TripNotFoundError, ForbiddenError, NotEnoughSeatsError
+from app.services.request_service import RequestService
+from app.core.exceptions import NotFoundError, ForbiddenError, NotEnoughSeatsError, InvalidStatusTransitionError
+
+
+# Re-export for backward compatibility
+RequestNotFoundError = NotFoundError
+TripNotFoundError = NotFoundError
 
 router = APIRouter()
 
@@ -47,18 +53,9 @@ async def update_request_status(
     current_user: User = Depends(get_current_user),
     request_service: RequestService = Depends(get_request_service)
 ):
-    try:
-        result = await request_service.update_request_status(
-            driver_id=current_user.id,
-            request_id=UUID(request_id),
-            new_status=request.status
-        )
-        return result
-    except RequestNotFoundError:
-        raise HTTPException(status_code=404, detail="Request not found")
-    except TripNotFoundError:
-        raise HTTPException(status_code=404, detail="Trip not found")
-    except ForbiddenError:
-        raise HTTPException(status_code=403, detail="Not authorized to update this request")
-    except NotEnoughSeatsError:
-        raise HTTPException(status_code=400, detail="Not enough available seats")
+    result = await request_service.update_request_status(
+        driver_id=current_user.id,
+        request_id=UUID(request_id),
+        new_status=request.status
+    )
+    return result

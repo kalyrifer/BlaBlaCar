@@ -177,7 +177,7 @@ The frontend application will start on http://localhost:5173
 
 Open your web browser and navigate to:
 ```
-http://localhost:5173
+http://localhost:5174
 ```
 
 ---
