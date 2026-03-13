@@ -26,6 +26,7 @@ from app.core.exceptions import (
     UserAlreadyExistsError,
     InvalidCredentialsError
 )
+from app.core.middleware import RequestIDMiddleware
 from app.background.worker import (
     get_notification_queue,
     notification_worker,
@@ -90,6 +91,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request ID middleware for logging
+app.add_middleware(RequestIDMiddleware)
 
 
 # Exception handlers for domain exceptions

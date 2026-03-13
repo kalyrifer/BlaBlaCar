@@ -15,6 +15,9 @@ from app.schemas.trip import (
     PaginatedTripsResponse,
 )
 from app.core.exceptions import NotFoundError, ForbiddenError
+from app.core.logger import get_logger, get_request_id
+
+logger = get_logger(__name__)
 
 
 # Re-export for backward compatibility
@@ -48,6 +51,17 @@ class TripService:
     
     async def create_trip(self, driver_id: UUID, trip_create: TripCreate) -> TripResponse:
         """Создание новой поездки"""
+        request_id = get_request_id()
+        
+        logger.info(
+            "Creating new trip",
+            extra={
+                "driver_id": str(driver_id),
+                "from_city": trip_create.from_city,
+                "to_city": trip_create.to_city,
+            }
+        )
+        
         trip = await self._trip_repo.create({
             "driver_id": driver_id,
             "from_city": trip_create.from_city,
@@ -58,6 +72,14 @@ class TripService:
             "description": trip_create.description,
             "status": "active"
         })
+        
+        logger.info(
+            "Trip created successfully",
+            extra={
+                "trip_id": str(trip.id),
+                "driver_id": str(trip.driver_id),
+            }
+        )
         
         return TripResponse(
             id=str(trip.id),
@@ -79,6 +101,16 @@ class TripService:
         page_size: int
     ) -> PaginatedTripsResponse:
         """Поиск поездок по фильтрам"""
+        logger.info(
+            "Searching trips",
+            extra={
+                "from_city": filters.from_city,
+                "to_city": filters.to_city,
+                "page": page,
+                "page_size": page_size,
+            }
+        )
+        
         trips = await self._trip_repo.search(
             filters.from_city,
             filters.to_city,
@@ -130,11 +162,37 @@ class TripService:
         trip_id: UUID
     ) -> None:
         """Удаление/отмена поездки (только водитель)"""
+        request_id = get_request_id()
+        
+        logger.info(
+            "Deleting/canceling trip",
+            extra={
+                "trip_id": str(trip_id),
+                "driver_id": str(driver_id),
+            }
+        )
+        
         trip = await self._trip_repo.get_by_id(trip_id)
         if not trip:
+            logger.warning(
+                "Trip not found for deletion",
+                extra={"trip_id": str(trip_id), "request_id": request_id}
+            )
             raise NotFoundError("Trip not found")
         
         if trip.driver_id != driver_id:
+            logger.warning(
+                "Not authorized to delete trip",
+                extra={
+                    "trip_driver_id": str(trip.driver_id),
+                    "request_id": request_id
+                }
+            )
             raise ForbiddenError("Not authorized to delete this trip")
         
         await self._trip_repo.delete(trip_id)
+        
+        logger.info(
+            "Trip deleted successfully",
+            extra={"trip_id": str(trip_id)}
+        )

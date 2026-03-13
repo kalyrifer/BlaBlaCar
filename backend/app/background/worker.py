@@ -5,8 +5,9 @@ from typing import Any, Dict, Optional
 from datetime import datetime
 
 from app.background.adapters import NotificationBackend, InProcessAdapter
+from app.core.logger import get_logger, get_request_id
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Global notification queue
 _notification_queue: asyncio.Queue[Dict[str, Any]] = None
@@ -45,6 +46,7 @@ def enqueue_notification(notification_payload: Dict[str, Any]) -> None:
             - message: Notification message
             - notification_type: Type of notification (e.g., "request_status", "trip_update")
     """
+    request_id = get_request_id()
     queue = get_notification_queue()
     # Add timestamp for processing
     payload = {
@@ -52,7 +54,13 @@ def enqueue_notification(notification_payload: Dict[str, Any]) -> None:
         "queued_at": datetime.utcnow()
     }
     queue.put_nowait(payload)
-    logger.info(f"Notification enqueued for user {notification_payload.get('user_id')}")
+    logger.info(
+        "Notification enqueued",
+        extra={
+            "user_id": str(notification_payload.get('user_id')),
+            "notification_type": notification_payload.get('notification_type'),
+        }
+    )
 
 
 async def notification_worker(
@@ -66,6 +74,8 @@ async def notification_worker(
         notification_queue: The queue to consume notifications from
         process_callback: Optional callback for custom processing
     """
+    request_id = get_request_id()
+    
     logger.info("Notification worker started")
     backend = get_notification_backend()
     
@@ -77,7 +87,14 @@ async def notification_worker(
                 timeout=1.0
             )
             
-            logger.info(f"Processing notification: {notification.get('title')}")
+            logger.info(
+                "Processing notification",
+                extra={
+                    "title": notification.get('title'),
+                    "user_id": str(notification.get('user_id')),
+                    "notification_type": notification.get('notification_type'),
+                }
+            )
             
             try:
                 if process_callback:
@@ -95,12 +112,18 @@ async def notification_worker(
                 else:
                     # Default processing - just log
                     logger.info(
-                        f"Default processing: Would send notification to user "
-                        f"{notification.get('user_id')}: {notification.get('title')}"
+                        "Default notification processing",
+                        extra={
+                            "user_id": str(notification.get('user_id')),
+                            "title": notification.get('title'),
+                        }
                     )
                     
             except Exception as e:
-                logger.error(f"Error processing notification: {e}")
+                logger.error(
+                    "Error processing notification",
+                    extra={"error": str(e)}
+                )
                 # In production, implement retry logic or dead letter queue
                 
             finally:
@@ -113,7 +136,10 @@ async def notification_worker(
             logger.info("Notification worker cancelled")
             break
         except Exception as e:
-            logger.error(f"Unexpected error in notification worker: {e}")
+            logger.error(
+                "Unexpected error in notification worker",
+                extra={"error": str(e)}
+            )
             
     logger.info("Notification worker stopped")
 

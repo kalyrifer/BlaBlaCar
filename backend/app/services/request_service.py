@@ -24,6 +24,9 @@ from app.core.exceptions import (
     InvalidStatusTransitionError,
     UserAlreadyExistsError
 )
+from app.core.logger import get_logger, get_request_id
+
+logger = get_logger(__name__)
 
 
 # Re-export for backward compatibility
@@ -105,22 +108,61 @@ class RequestService:
         message: Optional[str] = None
     ) -> TripRequestResponse:
         """Создание новой заявки на поездку"""
+        request_id = get_request_id()
+        
+        logger.info(
+            "Creating trip request",
+            extra={
+                "passenger_id": str(passenger_id),
+                "trip_id": str(trip_id),
+                "seats": seats,
+            }
+        )
+        
         # Проверка существования поездки
         trip = await self._trip_repo.get_by_id(trip_id)
         if not trip:
+            logger.warning(
+                "Trip not found for request",
+                extra={"trip_id": str(trip_id), "request_id": request_id}
+            )
             raise NotFoundError("Trip not found")
         
         # Нельзя отправлять заявку на свою поездку
         if trip.driver_id == passenger_id:
+            logger.warning(
+                "Cannot request own trip",
+                extra={
+                    "driver_id": str(trip.driver_id),
+                    "passenger_id": str(passenger_id),
+                    "request_id": request_id
+                }
+            )
             raise ValueError("Cannot request your own trip")
         
         # Проверка, что заявка уже не отправлена
         exists = await self._request_repo.exists(trip_id, passenger_id)
         if exists:
+            logger.warning(
+                "Request already exists",
+                extra={
+                    "trip_id": str(trip_id),
+                    "passenger_id": str(passenger_id),
+                    "request_id": request_id
+                }
+            )
             raise UserAlreadyExistsError("Request already sent")
         
         # Проверка доступности мест
         if trip.available_seats < seats:
+            logger.warning(
+                "Not enough seats available",
+                extra={
+                    "requested_seats": seats,
+                    "available_seats": trip.available_seats,
+                    "request_id": request_id
+                }
+            )
             raise NotEnoughSeatsError("Not enough available seats")
         
         # Создание заявки
@@ -148,6 +190,15 @@ class RequestService:
             }
         })
         
+        logger.info(
+            "Trip request created successfully",
+            extra={
+                "request_id": str(request.id),
+                "trip_id": str(trip_id),
+                "passenger_id": str(passenger_id),
+            }
+        )
+        
         return TripRequestResponse(
             id=str(request.id),
             trip_id=str(request.trip_id),
@@ -173,18 +224,45 @@ class RequestService:
         new_status: str
     ) -> TripRequestResponse:
         """Обновление статуса заявки (только водитель) с использованием блокировки"""
+        request_id_ctx = get_request_id()
+        
+        logger.info(
+            "Updating request status",
+            extra={
+                "request_id": str(request_id),
+                "driver_id": str(driver_id),
+                "new_status": new_status,
+            }
+        )
+        
         # Получение заявки
         request = await self._request_repo.get_by_id(request_id)
         if not request:
+            logger.warning(
+                "Request not found for update",
+                extra={"request_id": str(request_id), "request_id_ctx": request_id_ctx}
+            )
             raise NotFoundError("Request not found")
         
         # Получение поездки
         trip = await self._trip_repo.get_by_id(request.trip_id)
         if not trip:
+            logger.warning(
+                "Trip not found for request update",
+                extra={"trip_id": str(request.trip_id), "request_id_ctx": request_id_ctx}
+            )
             raise NotFoundError("Trip not found")
         
         # Проверка прав (только водитель может обновлять статус)
         if trip.driver_id != driver_id:
+            logger.warning(
+                "Not authorized to update request",
+                extra={
+                    "driver_id": str(driver_id),
+                    "trip_driver_id": str(trip.driver_id),
+                    "request_id_ctx": request_id_ctx
+                }
+            )
             raise ForbiddenError("Not authorized to update this request")
         
         # Проверка валидности перехода статуса
@@ -237,6 +315,15 @@ class RequestService:
         
         # Получение информации о пассажире (вне блокировки)
         passenger = await self._user_repo.get_by_id(request.passenger_id)
+        
+        logger.info(
+            "Request status updated successfully",
+            extra={
+                "request_id": str(request_id),
+                "old_status": request.status,
+                "new_status": new_status,
+            }
+        )
         
         return TripRequestResponse(
             id=str(updated_request.id),
