@@ -2,17 +2,6 @@
 
 A full-stack web application for finding and sharing rides, built with FastAPI (backend) and React + TypeScript (frontend).
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Running the Application](#running-the-application)
-- [Features](#features)
-- [API Documentation](#api-documentation)
-- [Troubleshooting](#troubleshooting)
-
 ---
 
 ## Overview
@@ -42,7 +31,7 @@ Ensure you have the following installed on your system:
 ## Project Structure
 
 ```
-bla-bla-car/
+BlaBlaCar/
 ├── backend/                     # FastAPI backend
 │   ├── app/
 │   │   ├── api/               # API endpoints
@@ -54,29 +43,49 @@ bla-bla-car/
 │   │   ├── core/              # Core configuration
 │   │   │   ├── config.py      # Application configuration
 │   │   │   ├── security.py    # Security utilities
-│   │   │   └── database.py    # Database configuration
-│   │   ├── models/            # SQLAlchemy database models
+│   │   │   ├── database.py    # Database configuration
+│   │   │   ├── logger.py      # Logging utilities
+│   │   │   ├── middleware.py   # Custom middleware
+│   │   │   └── exceptions.py  # Custom exceptions
+│   │   ├── db/models/         # SQLAlchemy database models
+│   │   ├── domain/            # Domain layer
+│   │   │   └── enums.py       # Domain enums
+│   │   ├── repositories/     # Repository pattern
+│   │   │   ├── interfaces/   # Repository interfaces
+│   │   │   └── inmemory/     # In-memory implementations
+│   │   ├── services/         # Business logic layer
+│   │   │   ├── auth_service.py
+│   │   │   ├── trip_service.py
+│   │   │   └── request_service.py
 │   │   ├── schemas/           # Pydantic schemas
-│   │   └── main.py            # Application entry point
-│   ├── tests/                 # Test files
-│   ├── requirements.txt       # Python dependencies
-│   └── .env                   # Environment variables
+│   │   ├── utils/            # Utilities
+│   │   │   └── mappers.py    # Data mappers
+│   │   ├── background/       # Background workers
+│   │   │   ├── worker.py
+│   │   │   └── adapters.py
+│   │   └── main.py           # Application entry point
+│   ├── tests/                # Test files
+│   │   ├── unit/            # Unit tests
+│   │   ├── integration/     # Integration tests
+│   │   └── concurrency/     # Concurrency tests
+│   ├── requirements.txt      # Python dependencies
+│   └── .env                 # Environment variables
 │
-├── frontend/                   # React + TypeScript frontend
+├── frontend/                  # React + TypeScript frontend
 │   ├── src/
-│   │   ├── components/       # Reusable UI components
-│   │   ├── pages/            # Page components
-│   │   ├── services/          # API services
-│   │   ├── stores/            # Zustand state management
-│   │   ├── types/             # TypeScript type definitions
-│   │   ├── App.tsx            # Root component
-│   │   └── main.tsx           # Entry point
-│   ├── public/                # Static assets
-│   ├── package.json           # Node dependencies
-│   ├── tsconfig.json          # TypeScript configuration
-│   └── vite.config.ts         # Vite configuration
+│   │   ├── components/      # Reusable UI components
+│   │   ├── pages/           # Page components
+│   │   ├── services/        # API services
+│   │   ├── stores/           # Zustand state management
+│   │   ├── types/            # TypeScript type definitions
+│   │   ├── App.tsx          # Root component
+│   │   └── main.tsx         # Entry point
+│   ├── public/               # Static assets
+│   ├── package.json         # Node dependencies
+│   ├── tsconfig.json        # TypeScript configuration
+│   └── vite.config.ts       # Vite configuration
 │
-└── README.md                   # This file
+└── README.md                 # This file
 ```
 
 ---
@@ -187,6 +196,7 @@ http://localhost:5174
 ### Authentication
 - User registration with email
 - Secure login with JWT tokens
+- Refresh token support
 - Password hashing with bcrypt
 - Protected routes
 
@@ -195,12 +205,14 @@ http://localhost:5174
 - Search trips by origin, destination, and date
 - View trip details
 - Update and delete trips
+- Trip status management (active, completed, cancelled)
 
 ### Ride Requests
 - Send ride requests (as passenger)
 - View pending requests (as driver)
 - Approve or reject requests
 - Track request status
+- Concurrent request handling
 
 ### User Profile
 - View user profiles
@@ -210,6 +222,7 @@ http://localhost:5174
 ### Notifications
 - In-app notifications
 - Read/unread status
+- Real-time notification updates
 
 ---
 
@@ -305,6 +318,8 @@ INFO:     Uvicorn running on http://0.0.0.0:8000
 - Python-Jose - JWT authentication
 - Passlib - Password hashing
 - Uvicorn - ASGI server
+- Repository Pattern - Data access abstraction
+- Background Workers - Async task processing
 
 ### Frontend
 - React 18 - UI library
@@ -313,6 +328,30 @@ INFO:     Uvicorn running on http://0.0.0.0:8000
 - React Router - Client-side routing
 - Axios - HTTP client
 - Zustand - State management
+
+---
+
+## Architecture
+
+This project follows a layered architecture pattern:
+
+### Backend Layers
+1. **API Layer** (`app/api/`) - FastAPI route handlers
+2. **Service Layer** (`app/services/`) - Business logic
+3. **Repository Layer** (`app/repositories/`) - Data access abstraction
+4. **Domain Layer** (`app/domain/`) - Domain models and enums
+5. **Database Models** (`app/db/models/`) - SQLAlchemy models
+
+### Testing
+The project includes comprehensive tests:
+- **Unit Tests** - Testing individual components in isolation
+- **Integration Tests** - Testing component interactions
+- **Concurrency Tests** - Testing thread-safe operations
+
+Run tests with:
+```bash
+pytest
+```
 
 ---
 
