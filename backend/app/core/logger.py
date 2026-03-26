@@ -11,6 +11,8 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
+from app.core.config import settings
+
 # Context variable to store request_id across the application
 request_id_context: ContextVar[Optional[str]] = ContextVar('request_id', default=None)
 
@@ -62,11 +64,14 @@ def get_logger(name: str) -> logging.Logger:
     
     # Only configure if not already configured
     if not logger.handlers:
-        logger.setLevel(logging.INFO)
+        # Set log level from settings
+        level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+        logger.setLevel(level)
         
         # Console handler with JSON formatter
         handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(JSONFormatter())
+        if settings.LOG_JSON_FORMAT:
+            handler.setFormatter(JSONFormatter())
         logger.addHandler(handler)
     
     return logger

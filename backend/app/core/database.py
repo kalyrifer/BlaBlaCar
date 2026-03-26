@@ -1,8 +1,11 @@
 """
 Инициализация базы данных с поддержкой PostgreSQL и in-memory storage.
 """
-from app.core.config import settings
+import asyncio
+import logging
 from typing import Optional
+
+from app.core.config import settings
 
 # Import in-memory repositories
 from app.repositories.inmemory.user_repo import InMemoryUserRepository
@@ -16,10 +19,55 @@ from app.repositories.interfaces import IUserRepository, ITripRepository, IReque
 from app.db.models.base import Base
 from app.db.models import user, trip, trip_request, notification, refresh_token  # Import all models
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.pool import AsyncAdaptedQueuePool
+
+logger = logging.getLogger(__name__)
 
 # Async engine и session factory для PostgreSQL
 engine = None
 async_session_maker = None
+
+# Retry configuration for database connections
+DB_MAX_RETRIES = 3
+DB_RETRY_DELAY = 1.0  # seconds
+
+
+async def _retry_db_operation(operation, max_retries: int = DB_MAX_RETRIES, delay: float = DB_RETRY_DELAY):
+    """
+    Retry logic for database operations with exponential backoff.
+    
+    Args:
+        operation: Async function to execute
+        max_retries: Maximum number of retry attempts
+        delay: Initial delay between retries (doubles each retry)
+    
+    Returns:
+        Result of the operation
+    
+    Raises:
+        Last exception if all retries fail
+    """
+    last_exception = None
+    current_delay = delay
+    
+    for attempt in range(max_retries):
+        try:
+            return await operation()
+        except Exception as e:
+            last_exception = e
+            if attempt < max_retries - 1:
+                logger.warning(
+                    f"Database operation failed (attempt {attempt + 1}/{max_retries}): {str(e)}. "
+                    f"Retrying in {current_delay}s..."
+                )
+                await asyncio.sleep(current_delay)
+                current_delay *= 2  # Exponential backoff
+            else:
+                logger.error(
+                    f"Database operation failed after {max_retries} attempts: {str(e)}"
+                )
+    
+    raise last_exception
 
 
 class Database:
@@ -54,17 +102,25 @@ db: Database = Database(use_pg=settings.USE_POSTGRESQL)
 
 
 def init_postgres():
-    """Инициализация PostgreSQL движка"""
+    """Инициализация PostgreSQL движка с пулом соединений и retry логикой"""
     global engine, async_session_maker, db
     
     if settings.USE_POSTGRESQL:
+        # Настройки пула соединений
+        pool_config = {
+            "poolclass": AsyncAdaptedQueuePool,
+            "pool_size": 5,          # min соединений
+            "max_overflow": 15,      # max = 5 + 15 = 20
+            "pool_timeout": 30,      # таймаут ожидания соединения
+            "pool_recycle": 1800,    # пересоздание соединений через 30 мин
+            "pool_pre_ping": True,    # проверка соединения перед использованием
+            "echo": settings.DEBUG,
+        }
+        
         # Создаем async engine для PostgreSQL
         engine = create_async_engine(
             settings.DATABASE_URL,
-            echo=settings.DEBUG,
-            pool_pre_ping=True,
-            pool_size=10,
-            max_overflow=20
+            **pool_config
         )
         
         # Создаем session maker
@@ -77,6 +133,7 @@ def init_postgres():
         # Обновляем db для использования PostgreSQL
         db = Database(use_pg=True)
         
+        logger.info(f"PostgreSQL initialized with pool: min=5, max=20")
         return engine, async_session_maker
     return None, None
 

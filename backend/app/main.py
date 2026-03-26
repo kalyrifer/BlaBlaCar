@@ -30,6 +30,8 @@ from app.core.exceptions import (
     InvalidCredentialsError
 )
 from app.core.middleware import RequestIDMiddleware
+from app.core.rate_limiter import RateLimitMiddleware
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.background.worker import (
     get_notification_queue,
     notification_worker,
@@ -100,6 +102,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security headers (CSP, X-Frame-Options, etc.)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Rate limiting
+if settings.RATE_LIMIT_ENABLED:
+    app.add_middleware(RateLimitMiddleware)
 
 # Request ID middleware for logging
 app.add_middleware(RequestIDMiddleware)
@@ -193,6 +202,69 @@ async def health_check():
             status["postgres_status"] = f"error: {str(e)}"
     
     return status
+
+
+@app.get("/health/live")
+async def liveness_check():
+    """
+    Liveness probe endpoint.
+    
+    Returns 200 if the application is running.
+    Used by Kubernetes to know when to restart the container.
+    """
+    return {"status": "alive"}
+
+
+@app.get("/health/ready")
+async def readiness_check():
+    """
+    Readiness probe endpoint.
+    
+    Returns 200 if the application is ready to accept traffic.
+    Includes database connectivity check.
+    """
+    from app.core.database import engine
+    from app.core.config import settings
+    from sqlalchemy import text
+    
+    checks = {
+        "status": "ready",
+        "checks": {}
+    }
+    
+    # Check database connectivity
+    if settings.USE_POSTGRESQL and engine is not None:
+        try:
+            async with engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+            checks["checks"]["database"] = "ok"
+        except Exception as e:
+            checks["status"] = "not_ready"
+            checks["checks"]["database"] = f"error: {str(e)}"
+    else:
+        checks["checks"]["database"] = "in-memory (no check needed)"
+    
+    # Return appropriate status code
+    if checks["status"] != "ready":
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=503,
+            content=checks
+        )
+    
+    return checks
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint."""
+    from app.core.metrics import get_metrics
+    from fastapi.responses import Response
+    
+    return Response(
+        content=get_metrics(),
+        media_type="text/plain"
+    )
 
 
 @app.get("/docs")
