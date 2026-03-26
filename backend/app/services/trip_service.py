@@ -196,3 +196,36 @@ class TripService:
             "Trip deleted successfully",
             extra={"trip_id": str(trip_id)}
         )
+
+    async def list_my_trips_as_driver(self, driver_id: UUID) -> List[dict]:
+        """Получение списка поездок водителя
+        
+        Args:
+            driver_id: ID водителя
+            
+        Returns:
+            Список поездок водителя
+        """
+        logger.info(
+            "Listing trips for driver",
+            extra={"driver_id": str(driver_id)}
+        )
+        
+        trips = await self._trip_repo.list_by_driver(driver_id)
+        
+        result = []
+        for trip in trips:
+            result.append({
+                "id": str(trip.id),
+                "driver_id": str(trip.driver_id),
+                "from_city": trip.from_city,
+                "to_city": trip.to_city,
+                "departure_at": trip.departure_at.isoformat() if trip.departure_at else None,
+                "available_seats": trip.available_seats,
+                "price_per_seat": trip.price_per_seat,
+                "description": trip.description,
+                "status": trip.status,
+                "created_at": trip.created_at.isoformat() if trip.created_at else None
+            })
+        
+        return result

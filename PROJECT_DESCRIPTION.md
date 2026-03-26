@@ -11,11 +11,13 @@
 7. [API эндпоинты](#api-эндпоинты)
 8. [Бизнес-логика](#бизнес-логика)
 9. [Система уведомлений](#система-уведомлений)
-10. [Безопасность](#безопасность)
-11. [Тестирование](#тестирование)
-12. [Конкурентность и блокировки](#конкурентность-и-блокировки)
-13. [Конфигурация](#конфигурация)
-14. [Запуск и разработка](#запуск-и-разработка)
+10. [Система чатов](#система-чатов)
+11. [Система отзывов](#система-отзывов)
+12. [Безопасность](#безопасность)
+13. [Тестирование](#тестирование)
+14. [Конкурентность и блокировки](#конкурентность-и-блокировки)
+15. [Конфигурация](#конфигурация)
+16. [Запуск и разработка](#запуск-и-разработка)
 
 ---
 
@@ -31,10 +33,12 @@
 
 - **Полный цикл:** от поиска поездки до завершения поездки
 - **Асинхронная обработка:** использование FastAPI и фоновых воркеров
-- **База данных:** PostgreSQL с async драйвером (sqlalchemy + asyncpg)
+- **База данных:** PostgreSQL с async драйвером (sqlalchemy + asyncpg) или In-memory хранилище
 - **Безопасность:** JWT аутентификация, хэширование паролей
 - **Масштабируемость:** паттерн репозитория для абстракции данных
 - **Тестируемость:** комплексное покрытие тестами
+- **Чат:** встроенная система обмена сообщениями между пользователями
+- **Отзывы:** система рейтинга и отзывов о пользователях
 
 ---
 
@@ -90,7 +94,7 @@
 - Просмотр информации о пользователе
 - Редактирование профиля (имя, телефон, информация о себе)
 - Просмотр истории поездок (в качестве водителя и пассажира)
-- Рейтинг и отзывы (планируется)
+- Рейтинг и отзывы
 
 ### 5. Система уведомлений
 
@@ -101,6 +105,20 @@
   - Отмене поездки
   - Напоминании о предстоящей поездке
 - Статусы прочитано/непрочитано
+
+### 6. Система чатов
+
+- Личные сообщения между пользователями
+- Создание чатов для обсуждения деталей поездки
+- Отправка и получение сообщений в реальном времени
+- История переписки
+
+### 7. Система отзывов и рейтинга
+
+- Оценка пользователей после поездки
+- Текстовые отзывы
+- Рейтинг пользователей (1-5 звёзд)
+- Отзывы от водителей и пассажиров друг о друге
 
 ---
 
@@ -122,10 +140,10 @@
 │       (app/repositories — Data Access)                 │
 ├─────────────────────────────────────────────────────────┤
 │                 Domain Layer                            │
-│           (app/domain — Enums, Models)                  │
+│           (app/domain — Enums, Models)                 │
 ├─────────────────────────────────────────────────────────┤
 │                Database Models                         │
-│          (app/models — SQLAlchemy Models)               │
+│          (app/models — SQLAlchemy Models)              │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -140,6 +158,8 @@
 - [`app/api/requests.py`](backend/app/api/requests.py) — Эндпоинты заявок
 - [`app/api/users.py`](backend/app/api/users.py) — Эндпоинты пользователей
 - [`app/api/notifications.py`](backend/app/api/notifications.py) — Эндпоинты уведомлений
+- [`app/api/chat.py`](backend/app/api/chat.py) — Эндпоинты чатов
+- [`app/api/reviews.py`](backend/app/api/reviews.py) — Эндпоинты отзывов
 
 ### Service Layer (Слой сервисов)
 
@@ -148,6 +168,8 @@
 - [`app/services/auth_service.py`](backend/app/services/auth_service.py) — Логика аутентификации
 - [`app/services/trip_service.py`](backend/app/services/trip_service.py) — Логика управления поездками
 - [`app/services/request_service.py`](backend/app/services/request_service.py) — Логика обработки заявок
+- [`app/services/chat_service.py`](backend/app/services/chat_service.py) — Логика чатов
+- [`app/services/review_service.py`](backend/app/services/review_service.py) — Логика отзывов
 
 ### Repository Layer (Слой репозиториев)
 
@@ -160,6 +182,7 @@
 - [`app/repositories/interfaces/request_repo.py`](backend/app/repositories/interfaces/request_repo.py)
 - [`app/repositories/interfaces/notification_repo.py`](backend/app/repositories/interfaces/notification_repo.py)
 - [`app/repositories/interfaces/refresh_token_repo.py`](backend/app/repositories/interfaces/refresh_token_repo.py)
+- [`app/repositories/interfaces/chat_repo.py`](backend/app/repositories/interfaces/chat_repo.py)
 
 **In-Memory реализации:**
 
@@ -168,6 +191,7 @@
 - [`app/repositories/inmemory/request_repo.py`](backend/app/repositories/inmemory/request_repo.py)
 - [`app/repositories/inmemory/notification_repo.py`](backend/app/repositories/inmemory/notification_repo.py)
 - [`app/repositories/inmemory/refresh_token_repo.py`](backend/app/repositories/inmemory/refresh_token_repo.py)
+- [`app/repositories/inmemory/chat_repo.py`](backend/app/repositories/inmemory/chat_repo.py)
 
 **PostgreSQL реализации:**
 
@@ -192,6 +216,8 @@ SQLAlchemy 2.0 модели для работы с PostgreSQL:
 - [`app/db/models/trip_request.py`](backend/app/db/models/trip_request.py) — Модель заявки
 - [`app/db/models/notification.py`](backend/app/db/models/notification.py) — Модель уведомления
 - [`app/db/models/refresh_token.py`](backend/app/db/models/refresh_token.py) — Модель refresh токена
+- [`app/db/models/chat.py`](backend/app/db/models/chat.py) — Модель чата и сообщений
+- [`app/db/models/review.py`](backend/app/db/models/review.py) — Модель отзыва
 
 ---
 
@@ -207,37 +233,44 @@ BlaBlaCar/
 │   │   │   ├── requests.py        # Заявки
 │   │   │   ├── users.py           # Пользователи
 │   │   │   ├── notifications.py   # Уведомления
+│   │   │   ├── chat.py            # Чат и сообщения
+│   │   │   ├── reviews.py         # Отзывы и рейтинг
 │   │   │   ├── deps.py            # Зависимости для DI
 │   │   │   └── __init__.py
 │   │   ├── core/                  # Основная конфигурация
 │   │   │   ├── config.py          # Настройки приложения
 │   │   │   ├── security.py        # Безопасность (JWT, пароли)
-│   │   │   ├── database.py        # Подключение к БД (PostgreSQL + in-memory)
+│   │   │   ├── database.py        # Подключение к БД
 │   │   │   ├── logger.py          # Логирование
 │   │   │   ├── middleware.py      # Middleware (CORS, Request ID)
 │   │   │   ├── exceptions.py      # Кастомные исключения
 │   │   │   └── __init__.py
-│   │   │   ├── db/                 # SQLAlchemy модели и репозитории
-│   │   │   │   ├── models/        # ORM модели
-│   │   │   │   │   ├── user.py
-│   │   │   │   │   ├── trip.py
-│   │   │   │   │   ├── trip_request.py
-│   │   │   │   │   ├── notification.py
-│   │   │   │   │   ├── refresh_token.py
-│   │   │   │   │   └── base.py
-│   │   │   │   └── repositories/   # PostgreSQL репозитории
-│   │   │   │       ├── pg_user_repo.py
-│   │   │   │       ├── pg_trip_repo.py
-│   │   │   │       ├── pg_request_repo.py
-│   │   │   │       ├── pg_notification_repo.py
-│   │   │   │       └── pg_refresh_token_repo.py
+│   │   ├── db/                    # SQLAlchemy модели и репозитории
+│   │   │   ├── models/            # ORM модели
+│   │   │   │   ├── user.py
+│   │   │   │   ├── trip.py
+│   │   │   │   ├── trip_request.py
+│   │   │   │   ├── notification.py
+│   │   │   │   ├── refresh_token.py
+│   │   │   │   ├── chat.py
+│   │   │   │   ├── review.py
+│   │   │   │   └── base.py
+│   │   │   └── repositories/       # PostgreSQL репозитории
+│   │   │       ├── pg_user_repo.py
+│   │   │       ├── pg_trip_repo.py
+│   │   │       ├── pg_request_repo.py
+│   │   │       ├── pg_notification_repo.py
+│   │   │       ├── pg_refresh_token_repo.py
+│   │   │       ├── pg_chat_repo.py
+│   │   │       └── pg_review_repo.py
 │   │   ├── domain/                # Доменные модели
 │   │   │   └── enums.py           # Перечисления (статусы)
-│   │   ├── models/                # SQLAlchemy модели
+│   │   ├── models/                # Pydantic модели
 │   │   │   ├── user.py
 │   │   │   ├── trip.py
 │   │   │   ├── request.py
 │   │   │   ├── notification.py
+│   │   │   ├── chat.py
 │   │   │   └── __init__.py
 │   │   ├── repositories/          # Слой доступа к данным
 │   │   │   ├── interfaces/        # Абстрактные интерфейсы
@@ -246,6 +279,8 @@ BlaBlaCar/
 │   │   │   │   ├── request_repo.py
 │   │   │   │   ├── notification_repo.py
 │   │   │   │   ├── refresh_token_repo.py
+│   │   │   │   ├── chat_repo.py
+│   │   │   │   ├── review_repo.py
 │   │   │   │   └── __init__.py
 │   │   │   ├── inmemory/          # In-memory реализации
 │   │   │   │   ├── user_repo.py
@@ -253,17 +288,17 @@ BlaBlaCar/
 │   │   │   │   ├── request_repo.py
 │   │   │   │   ├── notification_repo.py
 │   │   │   │   ├── refresh_token_repo.py
+│   │   │   │   ├── chat_repo.py
+│   │   │   │   ├── review_repo.py
 │   │   │   │   ├── locks.py        # Блокировки для конкурентности
 │   │   │   │   └── __init__.py
-│   │   │   ├── user_repo.py
-│   │   │   ├── trip_repo.py
-│   │   │   ├── request_repo.py
-│   │   │   ├── notification_repo.py
 │   │   │   └── __init__.py
 │   │   ├── services/              # Бизнес-логика
 │   │   │   ├── auth_service.py
 │   │   │   ├── trip_service.py
 │   │   │   ├── request_service.py
+│   │   │   ├── chat_service.py
+│   │   │   ├── review_service.py
 │   │   │   └── __init__.py
 │   │   ├── schemas/               # Pydantic схемы
 │   │   │   ├── auth.py
@@ -271,34 +306,70 @@ BlaBlaCar/
 │   │   │   ├── trip.py
 │   │   │   ├── request.py
 │   │   │   ├── notification.py
+│   │   │   ├── chat.py
+│   │   │   ├── review.py
 │   │   │   └── __init__.py
 │   │   ├── background/            # Фоновые задачи
 │   │   │   ├── worker.py          # Обработчик задач
 │   │   │   ├── adapters.py        # Адаптеры для уведомлений
 │   │   │   └── __init__.py
+│   │   ├── utils/                 # Утилиты
+│   │   │   └── mappers.py         # Мапперы данных
 │   │   └── main.py                # Точка входа
 │   ├── tests/                     # Тесты
 │   │   ├── unit/                  # Модульные тесты
 │   │   ├── integration/           # Интеграционные тесты
 │   │   ├── concurrency/           # Тесты параллелизма
 │   │   ├── conftest.py            # Pytest fixtures
-│   │   ├── test_*.py              # various test files
-│   ├── requirements.txt          # Python зависимости
+│   │   └── test_*.py              # various test files
+│   ├── requirements.txt            # Python зависимости
 │   └── .env                       # Переменные окружения
 │
 ├── frontend/                      # React приложение
 │   ├── src/
 │   │   ├── components/            # UI компоненты
-│   │   ├── pages/                 # Страницы
-│   │   ├── services/              # API клиент
-│   │   ├── stores/                # Zustand стейт
-│   │   ├── types/                 # TypeScript типы
+│   │   │   ├── ui/               # Базовые UI компоненты
+│   │   │   │   ├── Button.tsx
+│   │   │   │   ├── Input.tsx
+│   │   │   │   ├── Card.tsx
+│   │   │   │   ├── Skeleton.tsx
+│   │   │   │   └── index.ts
+│   │   │   ├── Layout.tsx        # Макет страницы
+│   │   │   ├── Map.tsx           # Компонент карты
+│   │   │   └── chat/             # Чат компоненты
+│   │   │       ├── ChatList.tsx
+│   │   │       ├── ChatWindow.tsx
+│   │   │       └── MessageBubble.tsx
+│   │   ├── pages/                # Страницы
+│   │   │   ├── HomePage.tsx
+│   │   │   ├── TripsPage.tsx
+│   │   │   ├── TripPage.tsx
+│   │   │   ├── CreateTripPage.tsx
+│   │   │   ├── MyTripsPage.tsx
+│   │   │   ├── LoginPage.tsx
+│   │   │   ├── RegisterPage.tsx
+│   │   │   ├── ProfilePage.tsx
+│   │   │   ├── NotificationsPage.tsx
+│   │   │   ├── MessagesPage.tsx
+│   │   │   └── ChatPage.tsx
+│   │   ├── services/             # API клиент
+│   │   │   └── api.ts
+│   │   ├── stores/               # Zustand стейт
+│   │   │   └── auth.ts
+│   │   ├── types/                # TypeScript типы
+│   │   │   └── index.ts
 │   │   ├── App.tsx
-│   │   └── main.tsx
+│   │   ├── main.tsx
+│   │   └── index.css
 │   ├── public/
+│   │   └── favicon.svg
 │   ├── package.json
 │   ├── tsconfig.json
-│   └── vite.config.ts
+│   ├── vite.config.ts
+│   └── index.html
+│
+├── plans/                        # Планы и документация
+│   └── *.md
 │
 └── README.md                      # Документация
 ```
@@ -322,7 +393,6 @@ BlaBlaCar/
 | Python | 3.10+ | Язык программирования |
 | pytest | latest | Тестирование |
 | pytest-asyncio | latest | Асинхронное тестирование |
-| Alembic | latest | Миграции БД |
 
 ### Фронтенд
 
@@ -348,6 +418,8 @@ class User:
     password_hash: str  # Хэш пароля
     name: str            # Имя
     phone: str           # Телефон (опционально)
+    avatar_url: str      # URL аватара (опционально)
+    rating: float        # Средний рейтинг
     created_at: datetime # Дата создания
     updated_at: datetime # Дата обновления
 ```
@@ -364,6 +436,7 @@ class Trip:
     available_seats: int # Доступные места
     price: float         # Цена за место
     status: TripStatus   # Статус поездки
+    description: str    # Описание (опционально)
     created_at: datetime # Дата создания
     updated_at: datetime # Дата обновления
 ```
@@ -381,6 +454,8 @@ class Request:
     id: str              # UUID
     trip_id: str         # ID поездки
     passenger_id: str    # ID пассажира
+    seats_requested: int # Запрошено мест
+    message: str         # Сообщение (опционально)
     status: RequestStatus # Статус заявки
     created_at: datetime # Дата создания
     updated_at: datetime # Дата обновления
@@ -403,6 +478,8 @@ class Notification:
     title: str           # Заголовок
     message: str         # Сообщение
     is_read: bool        # Прочитано/непрочитано
+    related_trip_id: str # ID связанной поездки (опционально)
+    related_request_id: str # ID связанной заявки (опционально)
     created_at: datetime # Дата создания
 ```
 
@@ -413,6 +490,41 @@ class Notification:
 - `REQUEST_REJECTED` — Заявка отклонена
 - `TRIP_CANCELLED` — Поездка отменена
 - `REQUEST_CANCELLED` — Заявка отменена
+- `NEW_MESSAGE` — Новое сообщение
+- `NEW_REVIEW` — Новый отзыв
+
+### Chat (Чат)
+
+```python
+class Chat:
+    id: str              # UUID
+    trip_id: str         # ID связанной поездки (опционально)
+    participants: list   # Участники чата
+    created_at: datetime # Дата создания
+    updated_at: datetime # Дата обновления
+
+class Message:
+    id: str              # UUID
+    chat_id: str         # ID чата
+    sender_id: str       # ID отправителя
+    content: str         # Текст сообщения
+    created_at: datetime # Дата отправки
+    is_read: bool        # Прочитано/непрочитано
+```
+
+### Review (Отзыв)
+
+```python
+class Review:
+    id: str              # UUID
+    author_id: str       # ID автора отзыва
+    target_id: str       # ID пользователя, о котором отзыв
+    trip_id: str         # ID поездки
+    rating: int          # Оценка (1-5)
+    comment: str         # Текст отзыва (опционально)
+    review_type: ReviewType # Тип отзыва (driver_to_passenger, passenger_to_driver)
+    created_at: datetime # Дата создания
+```
 
 ---
 
@@ -426,6 +538,7 @@ class Notification:
 | POST | `/api/auth/login` | Вход в систему | Нет |
 | GET | `/api/auth/me` | Получение текущего пользователя | Да |
 | POST | `/api/auth/refresh` | Обновление токена | Да |
+| POST | `/api/auth/logout` | Выход из системы | Да |
 
 ### Поездки
 
@@ -436,13 +549,14 @@ class Notification:
 | GET | `/api/trips/{id}` | Получение поездки по ID | Да |
 | PUT | `/api/trips/{id}` | Обновление поездки | Да (только водитель) |
 | DELETE | `/api/trips/{id}` | Удаление поездки | Да (только водитель) |
+| GET | `/api/trips/my/driver` | Мои поездки как водитель | Да |
 
 ### Заявки
 
 | Метод | Эндпоинт | Описание | Авторизация |
 |-------|----------|----------|-------------|
-| POST | `/api/trips/{id}/request` | Создание заявки | Да |
-| GET | `/api/requests` | Получение заявок пользователя | Да |
+| POST | `/api/trips/{id}/requests` | Создание заявки | Да |
+| GET | `/api/requests/my` | Мои заявки как пассажир | Да |
 | GET | `/api/trips/{id}/requests` | Получение заявок поездки | Да (только водитель) |
 | PUT | `/api/requests/{id}` | Обновление статуса заявки | Да |
 
@@ -453,6 +567,7 @@ class Notification:
 | GET | `/api/users/{id}` | Получение профиля | Да |
 | PUT | `/api/users/{id}` | Обновление профиля | Да |
 | GET | `/api/users/{id}/trips` | Получение поездок пользователя | Да |
+| GET | `/api/users/{id}/reviews` | Получение отзывов о пользователе | Да |
 
 ### Уведомления
 
@@ -461,6 +576,22 @@ class Notification:
 | GET | `/api/notifications` | Получение уведомлений | Да |
 | PUT | `/api/notifications/{id}/read` | Отметить как прочитанное | Да |
 | PUT | `/api/notifications/read-all` | Прочитать все | Да |
+
+### Чат
+
+| Метод | Эндпоинт | Описание | Авторизация |
+|-------|----------|----------|-------------|
+| GET | `/api/chats` | Получение списка чатов | Да |
+| POST | `/api/chats` | Создание чата | Да |
+| GET | `/api/chats/{id}` | Получение чата с сообщениями | Да |
+| POST | `/api/chats/{id}/messages` | Отправка сообщения | Да |
+
+### Отзывы
+
+| Метод | Эндпоинт | Описание | Авторизация |
+|-------|----------|----------|-------------|
+| POST | `/api/reviews` | Создание отзыва | Да |
+| GET | `/api/users/{id}/reviews` | Получение отзывов о пользователе | Да |
 
 ---
 
@@ -476,13 +607,6 @@ class Notification:
 - Генерацию и валидацию refresh токенов
 - Получение информации о текущем пользователе
 
-**Основные методы:**
-
-- `register(email, password, name)` — Регистрация
-- `login(email, password)` — Вход
-- `refresh_access_token(refresh_token)` — Обновление токена
-- `get_current_user(token)` — Получение текущего пользователя
-
 ### TripService
 
 Сервис поездок управляет жизненным циклом поездок:
@@ -494,84 +618,94 @@ class Notification:
 - Завершение поездок (только водителем)
 - Проверка доступности мест
 
-**Основные методы:**
-
-- `create_trip(driver_id, trip_data)` — Создание поездки
-- `search_trips(origin, destination, date)` — Поиск поездок
-- `get_trip(trip_id)` — Получение поездки
-- `update_trip(trip_id, driver_id, data)` — Обновление
-- `cancel_trip(trip_id, driver_id)` — Отмена
-- `complete_trip(trip_id, driver_id)` — Завершение
-
 ### RequestService
 
-Сервис заявок обрабатывает взаимодействие между пассажирами и водителями:
+Сервис заявок управляет процессом бронирования:
 
 - Создание заявок на поездку
-- Валидация доступности мест (конкурентная)
-- Принятие заявок водителем
-- Отклонение заявок водителем
+- Проверка доступности мест перед созданием заявки
+- Принятие заявок (уменьшение доступных мест)
+- Отклонение заявок
 - Отмена заявок пассажиром
-- Обработка конкурентных заявок
+- Обработка параллельных заявок с использованием блокировок
 
-**Основные методы:**
+### ChatService
 
-- `create_request(passenger_id, trip_id)` — Создание заявки
-- `approve_request(request_id, driver_id)` — Принятие заявки
-- `reject_request(request_id, driver_id)` — Отклонение заявки
-- `cancel_request(request_id, passenger_id)` — Отмена заявки
-- `get_trip_requests(trip_id, driver_id)` — Получение заявок поездки
-- `get_passenger_requests(passenger_id)` — Получение заявок пассажира
+Сервис чатов обеспечивает коммуникацию между пользователями:
 
-**Конкурентность:**
+- Создание чатов (личных или связанных с поездкой)
+- Отправка и получение сообщений
+- Получение истории переписки
+- Проверка участников чата
 
-Сервис использует блокировки для обеспечения корректной обработки нескольких заявок одновременно. Это предотвращает ситуации, когда количество принятых заявок превышает доступные места.
+### ReviewService
+
+Сервис отзывов управляет системой рейтинга:
+
+- Создание отзывов после поездки
+- Расчёт среднего рейтинга пользователя
+- Проверка, что поездка была завершена
+- Получение отзывов о пользователе
 
 ---
 
 ## Система уведомлений
 
-### Архитектура
+Система уведомлений информирует пользователей о важных событиях:
 
-Система уведомлений состоит из нескольких компонентов:
+- **Внутриприложенные уведомления** — не требуют email или push-уведомлений
+- **Автоматическая генерация** — уведомления создаются сервисами при наступлении событий
+- **Статусы прочитано/непрочитано** — пользователь может отмечать уведомления
+- **Связанные объекты** — уведомления содержат ссылки на связанные поездки и заявки
 
-1. **Модель уведомления** — хранение данных в БД
-2. **Репозиторий уведомлений** — доступ к данным
-3. **Background Worker** — асинхронная отправка
-4. **Адаптеры** — различные каналы доставки
+### Типы уведомлений
 
-### Типы событий
+| Тип | Описание | Когда создаётся |
+|-----|----------|----------------|
+| NEW_REQUEST | Новая заявка | Пассажир подаёт заявку на поездку |
+| REQUEST_APPROVED | Заявка принята | Водитель принимает заявку |
+| REQUEST_REJECTED | Заявка отклонена | Водитель отклоняет заявку |
+| TRIP_CANCELLED | Поездка отменена | Водитель отменяет поездку |
+| REQUEST_CANCELLED | Заявка отменена | Пассажир отменяет свою заявку |
+| NEW_MESSAGE | Новое сообщение | Пользователь получает сообщение |
+| NEW_REVIEW | Новый отзыв | Пользователь получает отзыв |
 
-Уведомления генерируются при следующих событиях:
+---
 
-| Событие | Получатель | Тип уведомления |
-|---------|------------|-----------------|
-| Новая заявка на поездку | Водитель | NEW_REQUEST |
-| Заявка принята | Пассажир | REQUEST_APPROVED |
-| Заявка отклонена | Пассажир | REQUEST_REJECTED |
-| Поездка отменена | Пассажиры (принятые заявки) | TRIP_CANCELLED |
-| Заявка отменена | Водитель | REQUEST_CANCELLED |
+## Система чатов
 
-### Workflow
+Система чатов позволяет пользователям общаться между собой:
 
-```
-Действие пользователя
-        │
-        ▼
-API Endpoint вызывает Service
-        │
-        ▼
-Service выполняет бизнес-логику
-        │
-        ▼
-Service создает уведомление в БД
-        │
-        ▼
-Background Worker обрабатывает очередь
-        │
-        ▼
-Адаптеры отправляют уведомление
-```
+- **Личные чаты** — для общения между двумя пользователями
+- **Чаты поездок** — привязанные к конкретной поездке
+- **История сообщений** — все сообщения сохраняются
+- **Индикация прочтения** — видно, прочитано ли сообщение
+
+### Использование
+
+1. Пользователь может начать чат с другим пользователем
+2. Чат можно привязать к поездке для контекста
+3. Сообщения отправляются мгновенно
+4. История доступна в любое время
+
+---
+
+## Система отзывов
+
+Система рейтинга и отзывов повышает доверие между пользователями:
+
+- **Оценка 1-5 звёзд** — количественная оценка
+- **Текстовый комментарий** — качественный отзыв
+- **Типы отзывов:**
+  - От водителя пассажиру
+  - От пассажира водителю
+- **Средний рейтинг** — автоматически рассчитывается для каждого пользователя
+
+### Правила
+
+- Оставить отзыв можно только о завершённой поездке
+- Один отзыв на пользователя за поездку
+- Автор отзыва видит только свои отзывы
 
 ---
 
@@ -579,130 +713,77 @@ Background Worker обрабатывает очередь
 
 ### Аутентификация
 
-- **JWT токены** — краткосрочные токены доступа (по умолчанию 24 часа)
-- **Refresh токены** — долгосрочные токены для обновления доступа
-- **Хэширование паролей** — использование bcrypt с солью
-- **Валидация email** — проверка формата email
+- **JWT токены** — используются для защиты API endpoints
+- **Access tokens** — краткосрочные токены (24 часа по умолчанию)
+- **Refresh tokens** — долгосрочные токены для обновления access токена
 
-### Авторизация
+### Хэширование паролей
 
-- Защищённые маршруты требуют валидный JWT токен
-- Проверка прав доступа к ресурсам (например, только водитель может редактировать свою поездку)
-- Использование dependency injection для внедрения текущего пользователя
+- **bcrypt** — используется для безопасного хэширования паролей
+- **Соль** — автоматически генерируется для каждого пароля
 
-### Защита данных
+### Защищённые маршруты
 
-- CORS настроен для разрешённых источников
-- Rate limiting (при необходимости)
-- Логирование запросов с request_id для трассировки
-- Обработка исключений с безопасными сообщениями об ошибках
+- Большинство API endpoints требуют аутентификации
+- Токен передаётся в заголовке `Authorization: Bearer <token>`
+
+### CORS
+
+- Настроена политика CORS для разрешённых источников
+- По умолчанию разрешены localhost:5173 и localhost:3000
 
 ---
 
 ## Тестирование
 
+Проект включает комплексные тесты:
+
 ### Типы тестов
 
-Проект включает комплексное покрытие тестами:
-
-#### Модульные тесты (Unit Tests)
-
-Тестирование отдельных компонентов в изоляции:
-
-- [`tests/unit/test_auth_service.py`](backend/tests/unit/test_auth_service.py) — Тесты сервиса аутентификации
-- [`tests/unit/test_trip_service.py`](backend/tests/unit/test_trip_service.py) — Тесты сервиса поездок
-
-#### Интеграционные тесты
-
-Тестирование взаимодействия между компонентами:
-
-- [`tests/integration/test_full_flow.py`](backend/tests/integration/test_full_flow.py) — Полный сценарий использования
-
-#### Тесты параллелизма
-
-Тестирование корректности при одновременных запросах:
-
-- [`tests/concurrency/test_request_concurrency.py`](backend/tests/concurrency/test_request_concurrency.py)
-- [`tests/test_request_service_concurrency.py`](backend/tests/test_request_service_concurrency.py)
-
-#### Другие тесты
-
-- [`tests/test_auth_service.py`](backend/tests/test_auth_service.py)
-- [`tests/test_repositories.py`](backend/tests/test_repositories.py)
-- [`tests/test_mappers.py`](backend/tests/test_mappers.py)
-- [`tests/test_notification_pipeline.py`](backend/tests/test_notification_pipeline.py)
-- [`tests/test_exception_handlers.py`](backend/tests/test_exception_handlers.py)
-- [`tests/test_status_transitions.py`](backend/tests/test_status_transitions.py)
+- **Модульные тесты** — тестирование отдельных компонентов в изоляции
+- **Интеграционные тесты** — тестирование взаимодействия компонентов
+- **Тесты параллелизма** — тестирование потокобезопасных операций
 
 ### Запуск тестов
 
 ```bash
-# Запуск всех тестов
 pytest
-
-# Запуск с покрытием
-pytest --cov=app
-
-# Запуск конкретного файла
-pytest tests/test_auth_service.py
-
-# Запуск с детальным выводом
-pytest -v
 ```
 
-### Fixtures
+### Покрытие
 
-В [`tests/conftest.py`](backend/tests/conftest.py) определены основные fixtures:
-
-- `test_app` — приложение FastAPI для тестирования
-- `test_client` — HTTP клиент для тестирования
-- `test_db` — тестовая база данных
-- `test_user` — тестовый пользователь
-- `test_trip` — тестовая поездка
+Тесты покрывают основные сценарии:
+- Регистрация и вход пользователей
+- Создание и поиск поездок
+- Заявки и их обработка
+- Параллельные заявки на одно место
 
 ---
 
 ## Конкурентность и блокировки
 
+Система использует механизм блокировок для обработки параллельных заявок:
+
 ### Проблема
 
-При одновременной подаче нескольких заявок на поездку с ограниченным количеством мест может возникнуть ситуация гонки (race condition), когда несколько заявок будут приняты, превысив доступное количество мест.
+При одновременной подаче заявок несколькими пассажирами на последнее место в поездке может возникнуть race condition.
 
 ### Решение
 
-Используется механизм блокировок на уровне поездки:
-
-1. При попытке создать заявку запрашивается блокировка на поездку
-2. Проверяется количество принятых заявок
-3. Если места доступны — заявка создаётся
-4. Блокировка освобождается
+- **Блокировка на уровне поездки** — используется `asyncio.Lock` для каждой поездки
+- **Атомарные операции** — проверка и бронирование места происходят в одном блоке
+- **Очередь обработки** — заявки обрабатываются последовательно
 
 ### Реализация
 
-В [`app/repositories/inmemory/locks.py`](backend/app/repositories/inmemory/locks.py) реализована система блокировок:
-
 ```python
-class TripLocks:
-    def acquire(self, trip_id: str) -> bool:
-        """Получить блокировку для поездки"""
-        
-    def release(self, trip_id: str) -> None:
-        """Освободить блокировку"""
-        
-    async def __aenter__(self):
-        """Контекстный менеджер"""
-        
-    async def __aexit__(self):
-        """Выход из контекста"""
+# В request_service.py
+async def create_request(trip_id: str, passenger_id: str, ...):
+    async with trip_locks[trip_id]:
+        # Проверка доступности мест
+        # Создание заявки
+        # Обновление количества мест
 ```
-
-### Тесты конкурентности
-
-Тесты в [`tests/test_request_service_concurrency.py`](backend/tests/test_request_service_concurrency.py) проверяют:
-
-- Одновременную подачу заявок несколькими пассажирами
-- Корректное количество принятых заявок
-- Отклонение лишних заявок при нехватке мест
 
 ---
 
@@ -710,14 +791,14 @@ class TripLocks:
 
 ### Переменные окружения
 
-Файл `.env` в директории `backend/`:
+Создайте файл `.env` в директории `backend/`:
 
 ```env
-# Приложение
+# Настройки приложения
 APP_NAME=Ride Sharing API
 DEBUG=True
 
-# JWT
+# Настройки JWT
 JWT_SECRET_KEY=your-secret-key-change-in-production
 JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
@@ -725,60 +806,20 @@ JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
 # CORS
 ALLOWED_ORIGINS=["http://localhost:5173","http://localhost:3000"]
 
-# База данных (PostgreSQL)
-USE_POSTGRESQL=True
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/roadmate_db
+# База данных
+USE_POSTGRESQL=False
+# PostgreSQL настройки (если USE_POSTGRESQL=True)
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+POSTGRES_DB=blablacar
 ```
 
-### Конфигурация в коде
+### Переключение хранилища
 
-Вся конфигурация сосредоточена в [`app/core/config.py`](backend/app/core/config.py):
-
-```python
-class Settings(BaseSettings):
-    app_name: str = "Ride Sharing API"
-    debug: bool = False
-    
-    # JWT
-    jwt_secret_key: str
-    jwt_algorithm: str = "HS256"
-    jwt_access_token_expire_minutes: int = 1440
-    
-    # CORS
-    allowed_origins: list[str]
-    
-    # Database
-    use_postgresql: bool = False
-    database_url: str = "sqlite:///./app.db"
-```
-
-### Архитектура базы данных
-
-Проект поддерживает два режима работы с данными:
-
-1. **In-Memory Storage** — для разработки и тестирования (по умолчанию)
-2. **PostgreSQL** — для production использования
-
-#### PostgreSQL конфигурация
-
-При включенном `USE_POSTGRESQL=True`:
-
-- Используется async драйвер `asyncpg` для высокой производительности
-- SQLAlchemy 2.0 с async support
-- Автоматическое создание таблиц при старте приложения
-- Connection pooling для эффективной работы
-
-#### Репозитории
-
-Для PostgreSQL реализованы соответствующие репозитории:
-
-- [`app/db/repositories/pg_user_repo.py`](backend/app/db/repositories/pg_user_repo.py)
-- [`app/db/repositories/pg_trip_repo.py`](backend/app/db/repositories/pg_trip_repo.py)
-- [`app/db/repositories/pg_request_repo.py`](backend/app/db/repositories/pg_request_repo.py)
-- [`app/db/repositories/pg_notification_repo.py`](backend/app/db/repositories/pg_notification_repo.py)
-- [`app/db/repositories/pg_refresh_token_repo.py`](backend/app/db/repositories/pg_refresh_token_repo.py)
-
-Все репозитории реализуют интерфейсы из [`app/repositories/interfaces/`](backend/app/repositories/interfaces/), что обеспечивает единообразный API независимо от типа хранилища.
+- `USE_POSTGRESQL=False` — используется in-memory хранилище (для разработки)
+- `USE_POSTGRESQL=True` — используется PostgreSQL (для продакшена)
 
 ---
 
@@ -790,58 +831,29 @@ class Settings(BaseSettings):
 - Node.js 18+
 - npm
 
-### Установка и запуск бэкенда
+### Установка и запуск
+
+#### Бэкенд
 
 ```bash
-# Переход в директорию бэкенда
 cd backend
-
-# Создание виртуального окружения
 python -m venv venv
-
-# Активация (Windows)
-venv\Scripts\activate
-
-# Активация (Linux/MacOS)
-source venv/bin/activate
-
-# Установка зависимостей
+# Windows: venv\Scripts\activate
+# Linux/MacOS: source venv/bin/activate
 pip install -r requirements.txt
-
-# Запуск сервера
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Установка и запуск фронтенда
+#### Фронтенд
 
 ```bash
-# Переход в директорию фронтенда
 cd frontend
-
-# Установка зависимостей
 npm install
-
-# Запуск dev сервера
 npm run dev
 ```
 
 ### Доступ к приложению
 
-- Бэкенд: http://localhost:8000
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-- Фронтенд: http://localhost:5173 (или http://localhost:5174)
-
----
-
-## Планы развития
-
-Проект находится в активной разработке. Возможные направления:
-
-- [x] ~~Добавление PostgreSQL в качестве базы данных~~ (РЕАЛИЗОВАНО)
-- Реализация real-time уведомлений через WebSockets
-- Добавление рейтингов и отзывов
-- Интеграция с платёжными системами
-- Мобильное приложение
-- Docker контейнеризация
-- CI/CD пайплайны
+- **Бэкенд API:** http://localhost:8000
+- **API документация:** http://localhost:8000/docs
+- **Фронтенд:** http://localhost:5173
