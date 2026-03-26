@@ -31,6 +31,7 @@
 
 - **Полный цикл:** от поиска поездки до завершения поездки
 - **Асинхронная обработка:** использование FastAPI и фоновых воркеров
+- **База данных:** PostgreSQL с async драйвером (sqlalchemy + asyncpg)
 - **Безопасность:** JWT аутентификация, хэширование паролей
 - **Масштабируемость:** паттерн репозитория для абстракции данных
 - **Тестируемость:** комплексное покрытие тестами
@@ -168,6 +169,14 @@
 - [`app/repositories/inmemory/notification_repo.py`](backend/app/repositories/inmemory/notification_repo.py)
 - [`app/repositories/inmemory/refresh_token_repo.py`](backend/app/repositories/inmemory/refresh_token_repo.py)
 
+**PostgreSQL реализации:**
+
+- [`app/db/repositories/pg_user_repo.py`](backend/app/db/repositories/pg_user_repo.py)
+- [`app/db/repositories/pg_trip_repo.py`](backend/app/db/repositories/pg_trip_repo.py)
+- [`app/db/repositories/pg_request_repo.py`](backend/app/db/repositories/pg_request_repo.py)
+- [`app/db/repositories/pg_notification_repo.py`](backend/app/db/repositories/pg_notification_repo.py)
+- [`app/db/repositories/pg_refresh_token_repo.py`](backend/app/db/repositories/pg_refresh_token_repo.py)
+
 ### Domain Layer (Доменный слой)
 
 Содержит доменные модели и перечисления:
@@ -176,12 +185,13 @@
 
 ### Database Models (Модели базы данных)
 
-SQLAlchemy модели для работы с данными:
+SQLAlchemy 2.0 модели для работы с PostgreSQL:
 
-- [`app/models/user.py`](backend/app/models/user.py) — Модель пользователя
-- [`app/models/trip.py`](backend/app/models/trip.py) — Модель поездки
-- [`app/models/request.py`](backend/app/models/request.py) — Модель заявки
-- [`app/models/notification.py`](backend/app/models/notification.py) — Модель уведомления
+- [`app/db/models/user.py`](backend/app/db/models/user.py) — Модель пользователя
+- [`app/db/models/trip.py`](backend/app/db/models/trip.py) — Модель поездки
+- [`app/db/models/trip_request.py`](backend/app/db/models/trip_request.py) — Модель заявки
+- [`app/db/models/notification.py`](backend/app/db/models/notification.py) — Модель уведомления
+- [`app/db/models/refresh_token.py`](backend/app/db/models/refresh_token.py) — Модель refresh токена
 
 ---
 
@@ -202,11 +212,25 @@ BlaBlaCar/
 │   │   ├── core/                  # Основная конфигурация
 │   │   │   ├── config.py          # Настройки приложения
 │   │   │   ├── security.py        # Безопасность (JWT, пароли)
-│   │   │   ├── database.py        # Подключение к БД
+│   │   │   ├── database.py        # Подключение к БД (PostgreSQL + in-memory)
 │   │   │   ├── logger.py          # Логирование
 │   │   │   ├── middleware.py      # Middleware (CORS, Request ID)
 │   │   │   ├── exceptions.py      # Кастомные исключения
 │   │   │   └── __init__.py
+│   │   │   ├── db/                 # SQLAlchemy модели и репозитории
+│   │   │   │   ├── models/        # ORM модели
+│   │   │   │   │   ├── user.py
+│   │   │   │   │   ├── trip.py
+│   │   │   │   │   ├── trip_request.py
+│   │   │   │   │   ├── notification.py
+│   │   │   │   │   ├── refresh_token.py
+│   │   │   │   │   └── base.py
+│   │   │   │   └── repositories/   # PostgreSQL репозитории
+│   │   │   │       ├── pg_user_repo.py
+│   │   │   │       ├── pg_trip_repo.py
+│   │   │   │       ├── pg_request_repo.py
+│   │   │   │       ├── pg_notification_repo.py
+│   │   │   │       └── pg_refresh_token_repo.py
 │   │   ├── domain/                # Доменные модели
 │   │   │   └── enums.py           # Перечисления (статусы)
 │   │   ├── models/                # SQLAlchemy модели
@@ -289,6 +313,8 @@ BlaBlaCar/
 |------------|--------|------------|
 | FastAPI | latest | Веб-фреймворк |
 | SQLAlchemy | 2.0 | ORM |
+| PostgreSQL | latest | База данных (основная) |
+| asyncpg | latest | Async драйвер для PostgreSQL |
 | Pydantic | v2 | Валидация данных |
 | Python-Jose | latest | JWT токены |
 | Passlib | 1.7.4 | Хэширование паролей |
@@ -296,6 +322,7 @@ BlaBlaCar/
 | Python | 3.10+ | Язык программирования |
 | pytest | latest | Тестирование |
 | pytest-asyncio | latest | Асинхронное тестирование |
+| Alembic | latest | Миграции БД |
 
 ### Фронтенд
 
@@ -698,8 +725,9 @@ JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
 # CORS
 ALLOWED_ORIGINS=["http://localhost:5173","http://localhost:3000"]
 
-# База данных
-USE_POSTGRESQL=False
+# База данных (PostgreSQL)
+USE_POSTGRESQL=True
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/roadmate_db
 ```
 
 ### Конфигурация в коде
@@ -721,7 +749,36 @@ class Settings(BaseSettings):
     
     # Database
     use_postgresql: bool = False
+    database_url: str = "sqlite:///./app.db"
 ```
+
+### Архитектура базы данных
+
+Проект поддерживает два режима работы с данными:
+
+1. **In-Memory Storage** — для разработки и тестирования (по умолчанию)
+2. **PostgreSQL** — для production использования
+
+#### PostgreSQL конфигурация
+
+При включенном `USE_POSTGRESQL=True`:
+
+- Используется async драйвер `asyncpg` для высокой производительности
+- SQLAlchemy 2.0 с async support
+- Автоматическое создание таблиц при старте приложения
+- Connection pooling для эффективной работы
+
+#### Репозитории
+
+Для PostgreSQL реализованы соответствующие репозитории:
+
+- [`app/db/repositories/pg_user_repo.py`](backend/app/db/repositories/pg_user_repo.py)
+- [`app/db/repositories/pg_trip_repo.py`](backend/app/db/repositories/pg_trip_repo.py)
+- [`app/db/repositories/pg_request_repo.py`](backend/app/db/repositories/pg_request_repo.py)
+- [`app/db/repositories/pg_notification_repo.py`](backend/app/db/repositories/pg_notification_repo.py)
+- [`app/db/repositories/pg_refresh_token_repo.py`](backend/app/db/repositories/pg_refresh_token_repo.py)
+
+Все репозитории реализуют интерфейсы из [`app/repositories/interfaces/`](backend/app/repositories/interfaces/), что обеспечивает единообразный API независимо от типа хранилища.
 
 ---
 
@@ -781,7 +838,7 @@ npm run dev
 
 Проект находится в активной разработке. Возможные направления:
 
-- Добавление PostgreSQL в качестве базы данных
+- [x] ~~Добавление PostgreSQL в качестве базы данных~~ (РЕАЛИЗОВАНО)
 - Реализация real-time уведомлений через WebSockets
 - Добавление рейтингов и отзывов
 - Интеграция с платёжными системами
