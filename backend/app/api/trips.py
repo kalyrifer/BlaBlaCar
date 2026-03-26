@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.api.deps import get_current_user, get_trip_service
 from app.models.user import User
 from app.services.trip_service import TripService, TripCreate, TripSearchFilters
+from app.schemas.trip import TripAdvancedFilters
 from app.core.exceptions import NotFoundError, ForbiddenError, NotEnoughSeatsError
 from app.services.request_service import RequestService, UserAlreadyExistsError
 
@@ -183,4 +184,151 @@ async def get_trip_requests(
         "page": 1,
         "page_size": 20,
         "pages": 1
+    }
+
+
+# ================== Favorites and Subscriptions ==================
+
+
+@router.post("/{trip_id}/favorite")
+async def add_trip_to_favorites(
+    trip_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Add a trip to user's favorites"""
+    # In a real implementation, this would save to DB
+    return {
+        "message": "Trip added to favorites",
+        "trip_id": trip_id,
+        "user_id": str(current_user.id)
+    }
+
+
+@router.delete("/{trip_id}/favorite")
+async def remove_trip_from_favorites(
+    trip_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Remove a trip from user's favorites"""
+    return {
+        "message": "Trip removed from favorites",
+        "trip_id": trip_id
+    }
+
+
+@router.get("/favorites")
+async def get_favorite_trips(
+    current_user: User = Depends(get_current_user),
+    trip_service: TripService = Depends(get_trip_service)
+):
+    """Get user's favorite trips""
+    # In a real implementation, this would fetch from DB
+    return {
+        "items": [],
+        "total": 0,
+        "page": 1,
+        "page_size": 20,
+        "pages": 1
+    }
+
+
+@router.get("/search/advanced")
+async def advanced_trip_search(
+    from_city: Optional[str] = Query(None),
+    to_city: Optional[str] = Query(None),
+    from_lat: Optional[float] = Query(None),
+    from_lon: Optional[float] = Query(None),
+    to_lat: Optional[float] = Query(None),
+    to_lon: Optional[float] = Query(None),
+    radius_km: int = Query(50, ge=1, le=200),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    departure_time_from: Optional[str] = Query(None),
+    departure_time_to: Optional[str] = Query(None),
+    available_seats_min: Optional[int] = Query(None, ge=1),
+    price_min: Optional[int] = Query(None, ge=0),
+    price_max: Optional[int] = Query(None, ge=0),
+    car_type: Optional[str] = Query(None),
+    smoking_allowed: Optional[bool] = Query(None),
+    pets_allowed: Optional[bool] = Query(None),
+    sort_by: str = Query("departure_at"),
+    sort_order: str = Query("asc"),
+    cursor: Optional[str] = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Advanced trip search with geolocation and filters"""
+    from app.services.search_service import get_search_service
+    
+    search_service = await get_search_service()
+    
+    filters = TripAdvancedFilters(
+        from_city=from_city,
+        to_city=to_city,
+        from_lat=from_lat,
+        from_lon=from_lon,
+        to_lat=to_lat,
+        to_lon=to_lon,
+        radius_km=radius_km,
+        date_from=date_from,
+        date_to=date_to,
+        departure_time_from=departure_time_from,
+        departure_time_to=departure_time_to,
+        available_seats_min=available_seats_min,
+        price_min=price_min,
+        price_max=price_max,
+        car_type=car_type,
+        smoking_allowed=smoking_allowed,
+        pets_allowed=pets_allowed,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
+    
+    result = await search_service.search_trips_advanced(
+        filters=filters,
+        cursor=cursor,
+        limit=limit
+    )
+    
+    return result
+
+
+@router.get("/{trip_id}/similar")
+async def get_similar_trips(
+    trip_id: str,
+    limit: int = Query(5, ge=1, le=20)
+):
+    """Get similar trips to the given trip"""
+    from app.services.search_service import get_search_service
+    
+    search_service = await get_search_service()
+    
+    similar_trips = await search_service.get_similar_trips(
+        trip_id=UUID(trip_id),
+        limit=limit
+    )
+    
+    return {
+        "items": similar_trips,
+        "total": len(similar_trips)
+    }
+
+
+@router.get("/recommendations")
+async def get_recommended_trips(
+    current_user: User = Depends(get_current_user),
+    limit: int = Query(10, ge=1, le=50)
+):
+    """Get recommended trips based on user's history"""
+    from app.services.search_service import get_search_service
+    
+    search_service = await get_search_service()
+    
+    recommended = await search_service.get_recommended_trips(
+        user_id=current_user.id,
+        limit=limit
+    )
+    
+    return {
+        "items": recommended,
+        "total": len(recommended)
     }

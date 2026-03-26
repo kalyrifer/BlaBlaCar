@@ -180,6 +180,69 @@ class TripSearchFilters(BaseModel):
         return parse_datetime(v)
 
 
+class TripAdvancedFilters(BaseModel):
+    """Advanced search filters with geolocation and additional options"""
+    # Basic city search
+    from_city: Optional[str] = None
+    to_city: Optional[str] = None
+    
+    # Geolocation search (radius-based)
+    from_lat: Optional[float] = None  # Latitude of departure point
+    from_lon: Optional[float] = None  # Longitude of departure point
+    to_lat: Optional[float] = None    # Latitude of destination
+    to_lon: Optional[float] = None     # Longitude of destination
+    radius_km: int = 50               # Search radius in kilometers
+    
+    # Date/time filters
+    date_from: Optional[Union[str, datetime]] = None
+    date_to: Optional[Union[str, datetime]] = None
+    departure_time_from: Optional[str] = None  # e.g., "08:00" for morning
+    departure_time_to: Optional[str] = None    # e.g., "18:00" for evening
+    
+    # Additional filters
+    available_seats_min: Optional[int] = None
+    price_min: Optional[int] = None
+    price_max: Optional[int] = None
+    car_type: Optional[str] = None
+    smoking_allowed: Optional[bool] = None
+    pets_allowed: Optional[bool] = None
+    luggage_size: Optional[str] = None  # small, medium, large
+    
+    # Sorting
+    sort_by: str = "departure_at"  # departure_at, price, created_at
+    sort_order: str = "asc"  # asc, desc
+    
+    @field_validator('date_from', mode='before')
+    @classmethod
+    def convert_date_from_to_utc(cls, v: Optional[Union[str, datetime]]) -> Optional[datetime]:
+        if v is None:
+            return None
+        return parse_datetime(v)
+    
+    @field_validator('date_to', mode='before')
+    @classmethod
+    def convert_date_to_to_utc(cls, v: Optional[Union[str, datetime]]) -> Optional[datetime]:
+        if v is None:
+            return None
+        return parse_datetime(v)
+
+
+# ================== Cursor-based Pagination ==================
+
+class CursorPaginator(BaseModel):
+    """Cursor-based pagination parameters"""
+    cursor: Optional[str] = None  # Encoded cursor from previous response
+    limit: int = 20               # Number of items per page (max 100)
+
+
+class CursorPaginatedResponse(BaseModel):
+    """Cursor-based paginated response"""
+    items: list
+    next_cursor: Optional[str] = None  # Cursor for next page
+    has_more: bool                      # Whether more items exist
+    total: int = 0
+
+
 # ================== Pagination DTOs ==================
 
 class PaginatedTripsResponse(BaseModel):

@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
-from app.api import auth, trips, requests, users, notifications
+from app.api import auth, trips, requests, users, notifications, reviews
 from app.core.config import settings
 from app.core.database import (
     get_user_repo,
@@ -175,6 +175,7 @@ app.include_router(trips.router, prefix="/api/trips", tags=["trips"])
 app.include_router(requests.router, prefix="/api/requests", tags=["requests"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(reviews.router, prefix="/api/reviews", tags=["reviews"])
 
 
 @app.get("/")
