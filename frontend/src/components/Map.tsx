@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix Leaflet default marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -18,7 +17,6 @@ interface MapProps {
   onToSelect?: (lat: number, lng: number, cityName: string) => void;
 }
 
-// Russian cities as predefined options
 const RUSSIAN_CITIES = [
   { name: 'Москва', lat: 55.7558, lng: 37.6173 },
   { name: 'Санкт-Петербург', lat: 59.9311, lng: 30.3609 },
@@ -52,17 +50,22 @@ const RUSSIAN_CITIES = [
   { name: 'Краснодар', lat: 45.0355, lng: 38.9753 },
 ];
 
-// Custom red icon for destination
-const destinationIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
+// Minimal dark circle markers
+const createMinimalIcon = (type: 'from' | 'to') => {
+  const color = type === 'from' ? '#2563eb' : '#dc2626';
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28">
+      <circle cx="12" cy="12" r="10" fill="${color}" stroke="white" stroke-width="2"/>
+      <circle cx="12" cy="12" r="4" fill="white"/>
+    </svg>
+  `;
+  return new L.Icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(svg)}`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+};
 
-// Component to handle map click events
 function MapClickHandler({ onSelect }: { onSelect: (lat: number, lng: number) => void }) {
   useMapEvents({
     click: (e) => {
@@ -72,7 +75,6 @@ function MapClickHandler({ onSelect }: { onSelect: (lat: number, lng: number) =>
   return null;
 }
 
-// Component to center map on a specific location
 function MapCenter({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   
@@ -98,10 +100,8 @@ export default function Map({
   const [searchFrom, setSearchFrom] = useState('');
   const [searchTo, setSearchTo] = useState('');
   
-  // Map center - default to Moscow
   const center: [number, number] = [55.7558, 37.6173];
   
-  // Find coordinates from city name
   const findCityCoords = (cityName: string): [number, number] | null => {
     const city = RUSSIAN_CITIES.find(c => 
       c.name.toLowerCase() === cityName.toLowerCase()
@@ -109,7 +109,6 @@ export default function Map({
     return city ? [city.lat, city.lng] : null;
   };
   
-  // Reverse geocoding - get city name from coordinates using OpenStreetMap Nominatim
   const getCityFromCoords = async (lat: number, lng: number): Promise<string> => {
     try {
       const response = await fetch(
@@ -143,7 +142,6 @@ export default function Map({
     }
   };
   
-  // Filter cities for dropdown
   const filteredFromCities = RUSSIAN_CITIES.filter(city =>
     city.name.toLowerCase().includes(searchFrom.toLowerCase())
   );
@@ -169,134 +167,121 @@ export default function Map({
       onToSelect(city.lat, city.lng, city.name);
     }
   };
+
+  const handleMapClick = (lat: number, lng: number) => {
+    if (!fromCoords) {
+      handleFromClick(lat, lng);
+    } else if (!toCoords) {
+      handleToClick(lat, lng);
+    } else {
+      setFromCoords(null);
+      setToCoords(null);
+      handleFromClick(lat, lng);
+    }
+  };
   
   return (
     <div className="map-container">
-      {/* City selection dropdowns */}
-      <div className="map-controls">
-        <div className="city-select-wrapper">
-          <label className="city-label">📍 Откуда</label>
-          <div className="city-input-wrapper">
-            <input
-              type="text"
-              placeholder="Выберите город"
-              value={searchFrom || fromCity || ''}
-              onChange={(e) => {
-                setSearchFrom(e.target.value);
-                setShowFromDropdown(true);
-              }}
-              onFocus={() => setShowFromDropdown(true)}
-              className="city-input"
-            />
-            {showFromDropdown && filteredFromCities.length > 0 && (
-              <div className="city-dropdown">
-                {filteredFromCities.map((city) => (
-                  <div
-                    key={city.name}
-                    className="city-option"
-                    onClick={() => handleFromCitySelect(city)}
-                  >
-                    {city.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+      {/* Minimal Search Bar */}
+      <div className="map-search">
+        <div className="search-field">
+          <span className="search-dot from"></span>
+          <input
+            type="text"
+            placeholder="Откуда"
+            value={searchFrom || fromCity || ''}
+            onChange={(e) => {
+              setSearchFrom(e.target.value);
+              setShowFromDropdown(true);
+            }}
+            onFocus={() => setShowFromDropdown(true)}
+            className="search-input"
+          />
+          {showFromDropdown && filteredFromCities.length > 0 && (
+            <div className="city-dropdown">
+              {filteredFromCities.map((city) => (
+                <div
+                  key={city.name}
+                  className="city-option"
+                  onClick={() => handleFromCitySelect(city)}
+                >
+                  {city.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         
-        <div className="city-select-wrapper">
-          <label className="city-label">🏁 Куда</label>
-          <div className="city-input-wrapper">
-            <input
-              type="text"
-              placeholder="Выберите город"
-              value={searchTo || toCity || ''}
-              onChange={(e) => {
-                setSearchTo(e.target.value);
-                setShowToDropdown(true);
-              }}
-              onFocus={() => setShowToDropdown(true)}
-              className="city-input"
-            />
-            {showToDropdown && filteredToCities.length > 0 && (
-              <div className="city-dropdown">
-                {filteredToCities.map((city) => (
-                  <div
-                    key={city.name}
-                    className="city-option"
-                    onClick={() => handleToCitySelect(city)}
-                  >
-                    {city.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        <div className="search-divider"></div>
+        
+        <div className="search-field">
+          <span className="search-dot to"></span>
+          <input
+            type="text"
+            placeholder="Куда"
+            value={searchTo || toCity || ''}
+            onChange={(e) => {
+              setSearchTo(e.target.value);
+              setShowToDropdown(true);
+            }}
+            onFocus={() => setShowToDropdown(true)}
+            className="search-input"
+          />
+          {showToDropdown && filteredToCities.length > 0 && (
+            <div className="city-dropdown">
+              {filteredToCities.map((city) => (
+                <div
+                  key={city.name}
+                  className="city-option"
+                  onClick={() => handleToCitySelect(city)}
+                >
+                  {city.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       
-      {/* Instructions */}
-      <div className="map-instructions">
-        Нажмите на карту чтобы выбрать точку отправления или прибытия
-      </div>
-      
-      {/* Leaflet Map */}
+      {/* Leaflet Map - Clean Style */}
       <MapContainer
         center={center}
         zoom={4}
-        style={{ height: '400px', width: '100%', borderRadius: '12px' }}
+        style={{ height: '350px', width: '100%', borderRadius: '8px' }}
+        zoomControl={true}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        {/* From location marker (green) */}
         {fromCoords && (
-          <Marker 
-            position={fromCoords} 
-            icon={new L.Icon({
-              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-              iconSize: [25, 41],
-              iconAnchor: [12, 41],
-              popupAnchor: [1, -34],
-              shadowSize: [41, 41]
-            })}
-          />
+          <Marker position={fromCoords} icon={createMinimalIcon('from')} />
         )}
         
-        {/* To location marker (red) */}
-        {toCoords && <Marker position={toCoords} icon={destinationIcon} />}
+        {toCoords && (
+          <Marker position={toCoords} icon={createMinimalIcon('to')} />
+        )}
         
-        {/* Click handler */}
-        <MapClickHandler onSelect={(lat, lng) => {
-          if (!fromCoords) {
-            handleFromClick(lat, lng);
-          } else if (!toCoords) {
-            handleToClick(lat, lng);
-          } else {
-            // Reset and start over
-            setFromCoords(null);
-            setToCoords(null);
-            handleFromClick(lat, lng);
-          }
-        }} />
+        <MapClickHandler onSelect={handleMapClick} />
         
-        {/* Center on from location */}
         {fromCoords && <MapCenter lat={fromCoords[0]} lng={fromCoords[1]} />}
       </MapContainer>
       
-      {/* Selected route display */}
+      {/* Minimal route info */}
       {(fromCoords || toCoords) && (
-        <div className="selected-route">
-          {fromCoords && toCoords && (
-            <div className="route-line">
-              <span className="route-from">📍 Откуда: выбрано</span>
-              <span className="route-arrow">→</span>
-              <span className="route-to">🏁 Куда: выбрано</span>
-            </div>
-          )}
+        <div className="route-info">
+          <div className="route-points">
+            <span className="route-point from">
+              <span className="point-dot"></span>
+              {fromCoords ? 'Точка отправления' : 'Выберите'}
+            </span>
+            <span className="route-line-h"></span>
+            <span className="route-point to">
+              <span className="point-dot"></span>
+              {toCoords ? 'Пункт назначения' : 'Выберите'}
+            </span>
+          </div>
           <button 
             className="clear-btn"
             onClick={() => {
@@ -304,7 +289,7 @@ export default function Map({
               setToCoords(null);
             }}
           >
-            Очистить
+            Сбросить
           </button>
         </div>
       )}
@@ -314,42 +299,59 @@ export default function Map({
           width: 100%;
         }
         
-        .map-controls {
+        .map-search {
           display: flex;
-          gap: 16px;
-          margin-bottom: 16px;
-          flex-wrap: wrap;
-        }
-        
-        .city-select-wrapper {
-          flex: 1;
-          min-width: 200px;
-          position: relative;
-        }
-        
-        .city-label {
-          display: block;
-          font-weight: 600;
-          margin-bottom: 8px;
-          color: #333;
-        }
-        
-        .city-input-wrapper {
-          position: relative;
-        }
-        
-        .city-input {
-          width: 100%;
-          padding: 12px 16px;
-          border: 2px solid #e5e7eb;
+          align-items: center;
+          background: #ffffff;
+          border: 1px solid #d1d5db;
           border-radius: 8px;
-          font-size: 16px;
-          transition: border-color 0.2s;
+          padding: 4px;
+          margin-bottom: 12px;
         }
         
-        .city-input:focus {
+        .search-field {
+          flex: 1;
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        
+        .search-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          margin: 0 12px;
+          flex-shrink: 0;
+        }
+        
+        .search-dot.from {
+          background: #2563eb;
+        }
+        
+        .search-dot.to {
+          background: #dc2626;
+        }
+        
+        .search-divider {
+          width: 1px;
+          height: 24px;
+          background: #e5e5e5;
+          margin: 0 4px;
+        }
+        
+        .search-input {
+          flex: 1;
+          border: none;
+          background: transparent;
+          padding: 10px 8px 10px 0;
+          font-size: 14px;
+          font-weight: 400;
+          color: #333;
           outline: none;
-          border-color: #3b82f6;
+        }
+        
+        .search-input::placeholder {
+          color: #999;
         }
         
         .city-dropdown {
@@ -358,65 +360,101 @@ export default function Map({
           left: 0;
           right: 0;
           background: white;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          max-height: 200px;
+          border: 1px solid #e5e5e5;
+          border-radius: 6px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          max-height: 180px;
           overflow-y: auto;
           z-index: 1000;
+          margin-top: 4px;
         }
         
         .city-option {
-          padding: 12px 16px;
+          padding: 10px 14px;
+          font-size: 13px;
+          color: #333;
           cursor: pointer;
-          transition: background-color 0.2s;
+          transition: background 0.15s;
         }
         
         .city-option:hover {
-          background-color: #f3f4f6;
+          background: #f5f5f5;
         }
         
-        .map-instructions {
-          text-align: center;
-          color: #6b7280;
-          margin-bottom: 12px;
-          font-size: 14px;
-        }
-        
-        .selected-route {
+        .route-info {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-top: 16px;
-          padding: 16px;
-          background: #f3f4f6;
-          border-radius: 8px;
+          margin-top: 12px;
+          padding: 12px 16px;
+          background: #ffffff;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
         }
         
-        .route-line {
+        .route-points {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 8px;
         }
         
-        .route-arrow {
-          color: #6b7280;
-          font-size: 20px;
+        .route-point {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          color: #374151;
+        }
+        
+        .point-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+        }
+        
+        .route-point.from .point-dot {
+          background: #2563eb;
+        }
+        
+        .route-point.to .point-dot {
+          background: #dc2626;
+        }
+        
+        .route-line-h {
+          width: 20px;
+          height: 1px;
+          background: #ddd;
         }
         
         .clear-btn {
-          padding: 8px 16px;
-          background: #ef4444;
-          color: white;
-          border: none;
-          border-radius: 6px;
+          padding: 6px 12px;
+          background: #f3f4f6;
+          color: #374151;
+          border: 1px solid #d1d5db;
+          border-radius: 4px;
           cursor: pointer;
-          font-size: 14px;
-          transition: background-color 0.2s;
+          font-size: 12px;
+          transition: all 0.15s;
         }
         
         .clear-btn:hover {
-          background: #dc2626;
+          background: #e5e7eb;
+          color: #111;
+        }
+        
+        /* Leaflet overrides */
+        .leaflet-container {
+          font-family: inherit;
+        }
+        
+        .leaflet-control-zoom {
+          border: none !important;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+        }
+        
+        .leaflet-control-zoom a {
+          background: white !important;
+          color: #333 !important;
         }
       `}</style>
     </div>
