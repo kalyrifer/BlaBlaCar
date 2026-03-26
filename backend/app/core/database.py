@@ -77,7 +77,7 @@ class Database:
         self.use_pg = use_pg
         
         if use_pg and settings.USE_POSTGRESQL:
-            # PostgreSQL mode - используем SQLAlchemy
+            # PostgreSQL mode - repositories will be set after session is created
             self._pg_session: Optional[AsyncSession] = None
         else:
             # In-memory mode - используем репозитории
@@ -104,6 +104,8 @@ db: Database = Database(use_pg=settings.USE_POSTGRESQL)
 def init_postgres():
     """Инициализация PostgreSQL движка с пулом соединений и retry логикой"""
     global engine, async_session_maker, db
+    
+    print(f"[DEBUG] USE_POSTGRESQL={settings.USE_POSTGRESQL}, env_file={getattr(settings, '_env_file', None)}")
     
     if settings.USE_POSTGRESQL:
         # Настройки пула соединений

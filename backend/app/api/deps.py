@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from app.core.database import get_db
+from app.core.database import get_db, get_user_repo, get_trip_repo, get_request_repo, get_notification_repo, get_refresh_token_repo
 from app.core.security import decode_token
 from app.models.user import User
 from app.services.auth_service import AuthService
@@ -34,8 +34,8 @@ async def get_current_user(
             detail="Invalid token payload"
         )
     
-    db = get_db()
-    user = await db.users.get_by_id(UUID(user_id))
+    user_repo = get_user_repo()
+    user = await user_repo.get_by_id(UUID(user_id))
     
     if user is None:
         raise HTTPException(
@@ -48,28 +48,31 @@ async def get_current_user(
 
 async def get_auth_service() -> AuthService:
     """Получить экземпляр AuthService"""
-    db = get_db()
-    return AuthService(user_repo=db.users)
+    user_repo = get_user_repo()
+    return AuthService(user_repo=user_repo)
 
 
 async def get_trip_service() -> TripService:
     """Получить экземпляр TripService"""
-    db = get_db()
-    return TripService(trip_repo=db.trips, user_repo=db.users)
+    trip_repo = get_trip_repo()
+    user_repo = get_user_repo()
+    return TripService(trip_repo=trip_repo, user_repo=user_repo)
 
 
 async def get_request_service() -> RequestService:
     """Получить экземпляр RequestService"""
-    db = get_db()
+    request_repo = get_request_repo()
+    trip_repo = get_trip_repo()
+    notification_repo = get_notification_repo()
+    user_repo = get_user_repo()
     return RequestService(
-        request_repo=db.requests,
-        trip_repo=db.trips,
-        notification_repo=db.notifications,
-        user_repo=db.users
+        request_repo=request_repo,
+        trip_repo=trip_repo,
+        notification_repo=notification_repo,
+        user_repo=user_repo
     )
 
 
 async def get_refresh_token_repo() -> IRefreshTokenRepository:
     """Получить экземпляр RefreshTokenRepository"""
-    db = get_db()
-    return db.refresh_tokens
+    return get_refresh_token_repo()

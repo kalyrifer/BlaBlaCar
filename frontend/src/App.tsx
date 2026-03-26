@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import { useAuthStore } from './stores/auth';
+import { isLoggedIn } from './services/api';
 import Layout from './components/Layout';
 
 // Lazy load pages for code splitting
@@ -38,12 +39,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const { checkAuth, isLoading } = useAuthStore();
+  const { setUser, isLoading } = useAuthStore();
   
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-  
+    // Check if user has a token in localStorage
+    if (isLoggedIn()) {
+      useAuthStore.getState().checkAuth();
+    } else {
+      // No token - set loading to false to show the app immediately
+      setUser(null);
+    }
+  }, [setUser]);
+
   if (isLoading) {
     return <PageLoader />;
   }

@@ -7,18 +7,77 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
+// Token storage - use localStorage for persistence
+const getToken = (): string | null => {
+  return localStorage.getItem('access_token');
+};
+
+const setToken = (token: string | null) => {
+  if (token) {
+    localStorage.setItem('access_token', token);
+  } else {
+    localStorage.removeItem('access_token');
+  }
+};
+
+const clearToken = () => {
+  localStorage.removeItem('access_token');
+};
+
+// Request interceptor to add auth token
+axiosInstance.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response interceptor to handle 401 errors
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      clearToken();
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth - use axiosInstance for requests
 export const authApi = {
   register: (data: { email: string; password: string; name: string; phone: string }) =>
     axiosInstance.post<User>('/auth/register', data),
   
-  login: (data: { email: string; password: string }) =>
-    axiosInstance.post<{ access_token: string; user: User }>('/auth/login', data),
+  login: async (data: { email: string; password: string }) => {
+    const response = await axiosInstance.post<{ access_token: string; user: User }>('/auth/login', data);
+    if (response.data.access_token) {
+      setToken(response.data.access_token);
+    }
+    return response;
+  },
   
-  logout: () => axiosInstance.post('/auth/logout'),
+  logout: async () => {
+    try {
+      await axiosInstance.post('/auth/logout');
+    } finally {
+      clearToken();
+    }
+  },
   
   me: () => axiosInstance.get<User>('/auth/me'),
 };
+
+// Helper to check if user is logged in
+export const isLoggedIn = (): boolean => {
+  return !!getToken();
+};
+
+// Helper to get token (for debugging)
+export const getAccessToken = getToken;
+
+// Helper to set token (exported for use in stores)
+export const setAccessToken = setToken;
 
 // Trips
 export const tripsApi = {

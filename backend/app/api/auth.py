@@ -37,7 +37,11 @@ class TokenResponse(BaseModel):
 
 
 @router.post("/register")
-async def register(request: RegisterRequest, auth_service: AuthService = Depends(get_auth_service)):
+async def register(
+    request: RegisterRequest, 
+    auth_service: AuthService = Depends(get_auth_service),
+    refresh_token_repo: IRefreshTokenRepository = Depends(get_refresh_token_repo)
+):
     user_create = UserCreate(
         email=request.email,
         password=request.password,
@@ -45,7 +49,26 @@ async def register(request: RegisterRequest, auth_service: AuthService = Depends
         phone=request.phone
     )
     result = await auth_service.register(user_create)
-    return result
+    
+    # Also generate token for the newly registered user
+    access_token = create_access_token({"sub": str(result.id)}, exp_minutes=15)
+    
+    # Generate refresh token
+    raw_token, hashed_token = create_refresh_token(result.id)
+    
+    # Store hashed token
+    await refresh_token_repo.create({
+        "user_id": UUID(result.id),
+        "hashed_token": hashed_token,
+        "expires_in_days": 7
+    })
+    
+    return {
+        "access_token": access_token,
+        "refresh_token": raw_token,
+        "token_type": "bearer",
+        "user": result
+    }
 
 
 @router.post("/login")

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { authApi } from '../services/api';
+import { authApi, setAccessToken } from '../services/api';
 import type { User } from '../types';
 
 interface AuthState {
@@ -13,7 +13,7 @@ interface AuthState {
   checkAuth: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
@@ -22,12 +22,18 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email, password) => {
     const response = await authApi.login({ email, password });
+    // Token is now stored in localStorage by authApi.login
     set({ user: response.data.user, isAuthenticated: true, isLoading: false });
   },
 
   register: async (email, password, name, phone) => {
     const response = await authApi.register({ email, password, name, phone });
-    set({ user: response.data, isAuthenticated: true, isLoading: false });
+    // After registration, the API returns access_token
+    if (response.data.access_token) {
+      // Store token in localStorage
+      localStorage.setItem('access_token', response.data.access_token);
+    }
+    set({ user: response.data.user, isAuthenticated: true, isLoading: false });
   },
 
   logout: async () => {
