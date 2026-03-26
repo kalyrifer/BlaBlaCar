@@ -456,6 +456,10 @@ export default function Map({
           background: white !important;
           color: #333 !important;
         }
+        
+        .leaflet-control-attribution {
+          display: none !important;
+        }
       `}</style>
     </div>
   );
