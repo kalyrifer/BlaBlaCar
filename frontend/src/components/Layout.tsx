@@ -1,8 +1,8 @@
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user, logout } = useAuthStore();
+export default function Layout() {
+  const { isAuthenticated } = useAuthStore();
   const location = useLocation();
 
   return (
@@ -18,7 +18,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <Link to="/trips" className={location.pathname === '/trips' ? 'active' : ''}>
                 Поиск
               </Link>
-              <Link to="/create-trip" className={location.pathname === '/create-trip' ? 'active' : ''}>
+              <Link to="/trips/new" className={location.pathname === '/trips/new' ? 'active' : ''}>
                 Создать
               </Link>
               <Link to="/my-trips" className={location.pathname === '/my-trips' ? 'active' : ''}>
