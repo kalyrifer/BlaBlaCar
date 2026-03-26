@@ -221,7 +221,7 @@ async def get_favorite_trips(
     current_user: User = Depends(get_current_user),
     trip_service: TripService = Depends(get_trip_service)
 ):
-    """Get user's favorite trips""
+    """Get user's favorite trips"""
     # In a real implementation, this would fetch from DB
     return {
         "items": [],

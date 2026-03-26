@@ -16,8 +16,22 @@ class UpdateUserRequest(BaseModel):
     phone: Optional[str] = None
 
 
+@router.get("/me")
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """Get current user info"""
+    return {
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "name": current_user.name,
+        "phone": current_user.phone,
+        "avatar_url": current_user.avatar_url,
+        "rating": current_user.rating,
+        "created_at": current_user.created_at.isoformat()
+    }
+
+
 @router.get("/{user_id}")
-async def get_user(user_id: str):
+async def get_user(user_id: str, current_user: User = Depends(get_current_user)):
     db = get_db()
     
     user = await db.users.get_by_id(UUID(user_id))

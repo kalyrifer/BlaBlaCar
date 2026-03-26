@@ -43,13 +43,16 @@ class InMemoryNotificationRepository(INotificationRepository):
         data = self._notifications.get(notification_id)
         return self._to_notification_model(data) if data else None
     
-    async def get_by_user(self, user_id: UUID) -> List[Notification]:
-        """Get all notifications for a user"""
-        return [
+    async def get_by_user(self, user_id: UUID, is_read: Optional[bool] = None) -> List[Notification]:
+        """Get all notifications for a user, optionally filtered by read status"""
+        notifications = [
             self._to_notification_model(data) 
             for data in self._notifications.values() 
             if data.user_id == user_id
         ]
+        if is_read is not None:
+            notifications = [n for n in notifications if n.is_read == is_read]
+        return notifications
     
     async def create(self, notification_data: dict) -> Notification:
         """Create new notification"""

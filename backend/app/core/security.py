@@ -8,15 +8,13 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, Set
 from uuid import UUID
 from pathlib import Path
-from jose import JWTError, jwt, RSAKey
-from passlib.context import CryptContext
+from jose import JWTError, jwt
+from cryptography.hazmat.primitives.asymmetric import rsa
+import bcrypt
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
-
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Thread pool for async-safe hashing
 _hash_executor = ThreadPoolExecutor(max_workers=2)
@@ -66,12 +64,12 @@ def _load_rsa_keys() -> tuple[Any, Any]:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Проверить пароль"""
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 
 def get_password_hash(password: str) -> str:
     """Хешировать пароль"""
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
 def is_token_blacklisted(token: str) -> bool:
@@ -137,12 +135,8 @@ def create_refresh_token(user_id: UUID) -> tuple[str, str]:
     # Generate secure random token
     raw_token = secrets.token_urlsafe(32)
     
-    # Hash the token for storage (using sync hashing in thread pool)
-    def hash_token():
-        return pwd_context.hash(raw_token)
-    
-    future = _hash_executor.submit(hash_token)
-    hashed_token = future.result()
+    # Hash the token for storage
+    hashed_token = bcrypt.hashpw(raw_token.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     return raw_token, hashed_token
 
@@ -157,7 +151,7 @@ def verify_refresh_token(plain_token: str, hashed_token: str) -> bool:
     Returns:
         True если токен валиден
     """
-    return pwd_context.verify(plain_token, hashed_token)
+    return bcrypt.checkpw(plain_token.encode('utf-8'), hashed_token.encode('utf-8'))
 
 
 def decode_token(token: str) -> Optional[Dict[str, Any]]:
