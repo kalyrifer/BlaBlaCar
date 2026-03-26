@@ -1,105 +1,105 @@
 # RoadMate
 
-A full-stack web application for finding and sharing rides, built with FastAPI (backend) and React + TypeScript (frontend).
+Веб-приложение полного цикла для поиска и совместных поездок, построенное на FastAPI (бэкенд) и React + TypeScript (фронтенд).
 
 ---
 
-## Overview
+## Обзор
 
-BlaBlaCar Clone is a ride-sharing platform that allows users to:
+BlaBlaCar Clone — это платформа для поиска попутчиков, которая позволяет пользователям:
 
-- Search for rides between cities
-- Create rides as drivers
-- Request to join rides as passengers
-- Manage profiles and view ride history
-- Receive notifications about trip updates
+- Искать поездки между городами
+- Создавать поездки в качестве водителя
+- Оставлять заявки на присоединение к поездкам в качестве пассажира
+- Управлять профилями и просматривать историю поездок
+- Получать уведомления об обновлениях поездок
 
 ---
 
-## Prerequisites
+## Требования
 
-Ensure you have the following installed on your system:
+Убедитесь, что в вашей системе установлено следующее:
 
-| Requirement | Version | Download Link |
-|-------------|---------|----------------|
+| Требование | Версия | Ссылка для скачивания |
+|------------|--------|----------------------|
 | Python | 3.10+ | [Python.org](https://www.python.org/downloads/) |
 | Node.js | 18+ | [Nodejs.org](https://nodejs.org/) |
-| npm | Comes with Node.js | - |
+| npm | Поставляется с Node.js | - |
 
 ---
 
-## Project Structure
+## Структура проекта
 
 ```
 BlaBlaCar/
-├── backend/                     # FastAPI backend
+├── backend/                     # FastAPI бэкенд
 │   ├── app/
-│   │   ├── api/               # API endpoints
-│   │   │   ├── auth.py        # Authentication endpoints
-│   │   │   ├── trips.py       # Trip management endpoints
-│   │   │   ├── requests.py    # Ride request endpoints
-│   │   │   ├── users.py       # User management endpoints
-│   │   │   └── notifications.py # Notification endpoints
-│   │   ├── core/              # Core configuration
-│   │   │   ├── config.py      # Application configuration
-│   │   │   ├── security.py    # Security utilities
-│   │   │   ├── database.py    # Database configuration
-│   │   │   ├── logger.py      # Logging utilities
-│   │   │   ├── middleware.py   # Custom middleware
-│   │   │   └── exceptions.py  # Custom exceptions
-│   │   ├── db/models/         # SQLAlchemy database models
-│   │   ├── domain/            # Domain layer
-│   │   │   └── enums.py       # Domain enums
-│   │   ├── repositories/     # Repository pattern
-│   │   │   ├── interfaces/   # Repository interfaces
-│   │   │   └── inmemory/     # In-memory implementations
-│   │   ├── services/         # Business logic layer
+│   │   ├── api/               # API эндпоинты
+│   │   │   ├── auth.py        # Эндпоинты аутентификации
+│   │   │   ├── trips.py       # Эндпоинты управления поездками
+│   │   │   ├── requests.py    # Эндпоинты заявок на поездки
+│   │   │   ├── users.py       # Эндпоинты управления пользователями
+│   │   │   └── notifications.py # Эндпоинты уведомлений
+│   │   ├── core/              # Основная конфигурация
+│   │   │   ├── config.py      # Конфигурация приложения
+│   │   │   ├── security.py    # Утилиты безопасности
+│   │   │   ├── database.py    # Конфигурация базы данных
+│   │   │   ├── logger.py      # Утилиты логирования
+│   │   │   ├── middleware.py   # Кастомные middleware
+│   │   │   └── exceptions.py  # Кастомные исключения
+│   │   ├── db/models/         # Модели базы данных SQLAlchemy
+│   │   ├── domain/            # Доменный слой
+│   │   │   └── enums.py       # Доменные перечисления
+│   │   ├── repositories/     # Паттерн репозитория
+│   │   │   ├── interfaces/   # Интерфейсы репозиториев
+│   │   │   └── inmemory/     # In-memory реализации
+│   │   ├── services/         # Слой бизнес-логики
 │   │   │   ├── auth_service.py
 │   │   │   ├── trip_service.py
 │   │   │   └── request_service.py
-│   │   ├── schemas/           # Pydantic schemas
-│   │   ├── utils/            # Utilities
-│   │   │   └── mappers.py    # Data mappers
-│   │   ├── background/       # Background workers
+│   │   ├── schemas           # Pydantic схемы
+│   │   ├── utils/            # Утилиты
+│   │   │   └── mappers.py    # Мапперы данных
+│   │   ├── background/       # Фоновые воркеры
 │   │   │   ├── worker.py
 │   │   │   └── adapters.py
-│   │   └── main.py           # Application entry point
-│   ├── tests/                # Test files
-│   │   ├── unit/            # Unit tests
-│   │   ├── integration/     # Integration tests
-│   │   └── concurrency/     # Concurrency tests
-│   ├── requirements.txt      # Python dependencies
-│   └── .env                 # Environment variables
+│   │   └── main.py           # Точка входа в приложение
+│   ├── tests/                # Тестовые файлы
+│   │   ├── unit/            # Модульные тесты
+│   │   ├── integration/     # Интеграционные тесты
+│   │   └── concurrency/     # Тесты параллелизма
+│   ├── requirements.txt      # Зависимости Python
+│   └── .env                 # Переменные окружения
 │
-├── frontend/                  # React + TypeScript frontend
+├── frontend/                  # React + TypeScript фронтенд
 │   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   ├── pages/           # Page components
-│   │   ├── services/        # API services
-│   │   ├── stores/           # Zustand state management
-│   │   ├── types/            # TypeScript type definitions
-│   │   ├── App.tsx          # Root component
-│   │   └── main.tsx         # Entry point
-│   ├── public/               # Static assets
-│   ├── package.json         # Node dependencies
-│   ├── tsconfig.json        # TypeScript configuration
-│   └── vite.config.ts       # Vite configuration
+│   │   ├── components/      # Переиспользуемые UI компоненты
+│   │   ├── pages/           # Компоненты страниц
+│   │   ├── services/        # API сервисы
+│   │   ├── stores/           # Zustand управление состоянием
+│   │   ├── types/            # TypeScript определения типов
+│   │   ├── App.tsx          # Корневой компонент
+│   │   └── main.tsx         # Точка входа
+│   ├── public/               # Статические файлы
+│   ├── package.json         # Node зависимости
+│   ├── tsconfig.json        # TypeScript конфигурация
+│   └── vite.config.ts       # Vite конфигурация
 │
-└── README.md                 # This file
+└── README.md                 # Этот файл
 ```
 
 ---
 
-## Installation
+## Установка
 
-### Backend Setup
+### Настройка бэкенда
 
-1. Navigate to the backend directory:
+1. Перейдите в директорию бэкенда:
    ```bash
    cd backend
    ```
 
-2. Create a virtual environment (optional but recommended):
+2. Создайте виртуальное окружение (рекомендуется):
 
    **Windows:**
    ```bash
@@ -113,20 +113,20 @@ BlaBlaCar/
    source venv/bin/activate
    ```
 
-3. Install Python dependencies:
+3. Установите зависимости Python:
    ```bash
    pip install -r requirements.txt
    ```
 
-4. Configure environment variables:
+4. Настройте переменные окружения:
 
-   Create a `.env` file in the `backend/` directory with the following content:
+   Создайте файл `.env` в директории `backend/` со следующим содержимым:
    ```env
-   # Application Settings
+   # Настройки приложения
    APP_NAME=Ride Sharing API
    DEBUG=True
 
-   # JWT Settings
+   # Настройки JWT
    JWT_SECRET_KEY=your-secret-key-change-in-production
    JWT_ALGORITHM=HS256
    JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
@@ -134,227 +134,227 @@ BlaBlaCar/
    # CORS
    ALLOWED_ORIGINS=["http://localhost:5173","http://localhost:3000"]
 
-   # Database
+   # База данных
    USE_POSTGRESQL=False
    ```
 
-### Frontend Setup
+### Настройка фронтенда
 
-1. Navigate to the frontend directory:
+1. Перейдите в директорию фронтенда:
    ```bash
    cd frontend
    ```
 
-2. Install Node.js dependencies:
+2. Установите Node.js зависимости:
    ```bash
    npm install
    ```
 
 ---
 
-## Running the Application
+## Запуск приложения
 
-### Starting the Backend
+### Запуск бэкенда
 
-1. Navigate to the backend directory:
+1. Перейдите в директорию бэкенда:
    ```bash
    cd backend
    ```
 
-2. Start the FastAPI server:
+2. Запустите FastAPI сервер:
    ```bash
    uvicorn app.main:app --reload --port 8000
    ```
 
-The backend server will start on http://localhost:8000
+Сервер бэкенда запустится по адресу http://localhost:8000
 
-### Starting the Frontend
+### Запуск фронтенда
 
-1. Navigate to the frontend directory:
+1. Перейдите в директорию фронтенда:
    ```bash
    cd frontend
    ```
 
-2. Start the development server:
+2. Запустите сервер разработки:
    ```bash
    npm run dev
    ```
 
-The frontend application will start on http://localhost:5173
+Приложение фронтенда запустится по адресу http://localhost:5173
 
-### Accessing the Application
+### Доступ к приложению
 
-Open your web browser and navigate to:
+Откройте веб-браузер и перейдите по адресу:
 ```
 http://localhost:5174
 ```
 
 ---
 
-## Features
+## Функциональность
 
-### Authentication
-- User registration with email
-- Secure login with JWT tokens
-- Refresh token support
-- Password hashing with bcrypt
-- Protected routes
+### Аутентификация
+- Регистрация пользователей с email
+- Безопасный вход с JWT токенами
+- Поддержка刷新 токенов
+- Хэширование паролей с bcrypt
+- Защищённые маршруты
 
-### Trips
-- Create new trips (as driver)
-- Search trips by origin, destination, and date
-- View trip details
-- Update and delete trips
-- Trip status management (active, completed, cancelled)
+### Поездки
+- Создание новых поездок (в качестве водителя)
+- Поиск поездок по месту отправления, назначения и дате
+- Просмотр деталей поездки
+- Обновление и удаление поездок
+- Управление статусом поездки (активна, завершена, отменена)
 
-### Ride Requests
-- Send ride requests (as passenger)
-- View pending requests (as driver)
-- Approve or reject requests
-- Track request status
-- Concurrent request handling
+### Заявки на поездки
+- Отправка заявок (в качестве пассажира)
+- Просмотр ожидающих заявок (в качестве водителя)
+- Принятие или отклонение заявок
+- Отслеживание статуса заявки
+- Обработка параллельных заявок
 
-### User Profile
-- View user profiles
-- Update profile information
-- View ride history
+### Профиль пользователя
+- Просмотр профилей пользователей
+- Обновление информации профиля
+- Просмотр истории поездок
 
-### Notifications
-- In-app notifications
-- Read/unread status
-- Real-time notification updates
+### Уведомления
+- Внутриприложенные уведомления
+- Статус прочитано/непрочитано
+- Обновление уведомлений в реальном времени
 
 ---
 
-## API Documentation
+## Документация API
 
-Once the backend is running, you can access the API documentation at:
+После запуска бэкенда вы можете получить доступ к документации API:
 
-| Documentation | URL |
-|---------------|-----|
+| Документация | URL |
+|-------------|-----|
 | Swagger UI | http://localhost:8000/docs |
 | ReDoc | http://localhost:8000/redoc |
 
-### Authentication Endpoints
+### Эндпоинты аутентификации
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/auth/register | Register new user |
-| POST | /api/auth/login | Login and get JWT |
-| GET | /api/auth/me | Get current user |
+| Метод | Эндпоинт | Описание |
+|-------|----------|----------|
+| POST | /api/auth/register | Регистрация нового пользователя |
+| POST | /api/auth/login | Вход и получение JWT |
+| GET | /api/auth/me | Получение текущего пользователя |
 
-### Trip Endpoints
+### Эндпоинты поездок
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/trips | Create a new trip |
-| GET | /api/trips | Search trips |
-| GET | /api/trips/{id} | Get trip details |
-| PUT | /api/trips/{id} | Update trip |
-| DELETE | /api/trips/{id} | Delete trip |
+| Метод | Эндпоинт | Описание |
+|-------|----------|----------|
+| POST | /api/trips | Создание новой поездки |
+| GET | /api/trips | Поиск поездок |
+| GET | /api/trips/{id} | Получение деталей поездки |
+| PUT | /api/trips/{id} | Обновление поездки |
+| DELETE | /api/trips/{id} | Удаление поездки |
 
-### Request Endpoints
+### Эндпоинты заявок
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/trips/{id}/request | Send ride request |
-| GET | /api/requests | Get my requests |
-| GET | /api/trips/{id}/requests | Get trip requests |
-| PUT | /api/requests/{id} | Handle request |
+| Метод | Эндпоинт | Описание |
+|-------|----------|----------|
+| POST | /api/trips/{id}/request | Отправка заявки на поездку |
+| GET | /api/requests | Получение моих заявок |
+| GET | /api/trips/{id}/requests | Получение заявок поездки |
+| PUT | /api/requests/{id} | Обработка заявки |
 
-### User Endpoints
+### Эндпоинты пользователей
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/users/{id} | Get user profile |
-| PUT | /api/users/{id} | Update profile |
-| GET | /api/users/{id}/trips | Get user trips |
+| Метод | Эндпоинт | Описание |
+|-------|----------|----------|
+| GET | /api/users/{id} | Получение профиля пользователя |
+| PUT | /api/users/{id} | Обновление профиля |
+| GET | /api/users/{id}/trips | Получение поездок пользователя |
 
 ---
 
-## Troubleshooting
+## Устранение неполадок
 
-### Port Already in Use
+### Порт уже занят
 
-If port 8000 or 5173 is already in use, you can specify a different port:
+Если порт 8000 или 5173 уже занят, вы можете указать другой порт:
 
-**Backend:**
+**Бэкенд:**
 ```bash
 uvicorn app.main:app --reload --port 8001
 ```
 
-**Frontend:**
+**Фронтенд:**
 ```bash
 npm run dev -- --port 5174
 ```
 
-### Dependency Installation Errors
+### Ошибки установки зависимостей
 
-If you encounter errors during dependency installation:
+При возникновении ошибок во время установки зависимостей:
 
 ```bash
-# Update pip
+# Обновите pip
 python -m pip install --upgrade pip
 
-# Reinstall dependencies
+# Переустановите зависимости
 pip install -r requirements.txt
 ```
 
-### Backend Not Responding
+### Бэкенд не отвечает
 
-Ensure the backend is running and check the terminal for error messages. The backend should display:
+Убедитесь, что бэкенд запущен, и проверьте терминал на наличие сообщений об ошибках. Бэкенд должен отображать:
 ```
 INFO:     Uvicorn running on http://0.0.0.0:8000
 ```
 
 ---
 
-## Technology Stack
+## Технологический стек
 
-### Backend
-- FastAPI - Modern Python web framework
-- SQLAlchemy 2.0 - ORM for database operations
-- Pydantic v2 - Data validation
-- Python-Jose - JWT authentication
-- Passlib - Password hashing
-- Uvicorn - ASGI server
-- Repository Pattern - Data access abstraction
-- Background Workers - Async task processing
+### Бэкенд
+- FastAPI — Современный Python веб-фреймворк
+- SQLAlchemy 2.0 — ORM для работы с базой данных
+- Pydantic v2 — Валидация данных
+- Python-Jose — JWT аутентификация
+- Passlib — Хэширование паролей
+- Uvicorn — ASGI сервер
+- Паттерн Репозиторий — Абстракция доступа к данным
+- Фоновые воркеры — Асинхронная обработка задач
 
-### Frontend
-- React 18 - UI library
-- TypeScript - Type-safe JavaScript
-- Vite - Build tool
-- React Router - Client-side routing
-- Axios - HTTP client
-- Zustand - State management
+### Фронтенд
+- React 18 — UI библиотека
+- TypeScript — Типобезопасный JavaScript
+- Vite — Инструмент сборки
+- React Router — Клиентская маршрутизация
+- Axios — HTTP клиент
+- Zustand — Управление состоянием
 
 ---
 
-## Architecture
+## Архитектура
 
-This project follows a layered architecture pattern:
+Этот проект следует паттерну многоуровневой архитектуры:
 
-### Backend Layers
-1. **API Layer** (`app/api/`) - FastAPI route handlers
-2. **Service Layer** (`app/services/`) - Business logic
-3. **Repository Layer** (`app/repositories/`) - Data access abstraction
-4. **Domain Layer** (`app/domain/`) - Domain models and enums
-5. **Database Models** (`app/db/models/`) - SQLAlchemy models
+### Уровни бэкенда
+1. **API слой** (`app/api/`) — Обработчики маршрутов FastAPI
+2. **Сервисный слой** (`app/services/`) — Бизнес-логика
+3. **Слой репозиториев** (`app/repositories/`) — Абстракция доступа к данным
+4. **Доменный слой** (`app/domain/`) — Доменные модели и перечисления
+5. **Модели базы данных** (`app/db/models/`) — Модели SQLAlchemy
 
-### Testing
-The project includes comprehensive tests:
-- **Unit Tests** - Testing individual components in isolation
-- **Integration Tests** - Testing component interactions
-- **Concurrency Tests** - Testing thread-safe operations
+### Тестирование
+Проект включает комплексные тесты:
+- **Модульные тесты** — Тестирование отдельных компонентов в изоляции
+- **Интеграционные тесты** — Тестирование взаимодействия компонентов
+- **Тесты параллелизма** — Тестирование потокобезопасных операций
 
-Run tests with:
+Запустите тесты с помощью:
 ```bash
 pytest
 ```
 
 ---
 
-## License
+## Лицензия
 
-This project is licensed under the MIT License.
+Этот проект лицензирован по лицензии MIT.

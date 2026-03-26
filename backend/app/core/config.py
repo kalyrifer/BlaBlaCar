@@ -19,8 +19,9 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
     
-    # Storage
+    # Database
     USE_POSTGRESQL: bool = False
+    DATABASE_URL: str = "sqlite:///./app.db"
     
     class Config:
         env_file = ".env"

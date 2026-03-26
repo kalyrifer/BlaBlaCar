@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM models package"""
+"""SQLAlchemy ORM models"""
 from app.db.models.base import Base
 from app.db.models.user import User
 from app.db.models.trip import Trip

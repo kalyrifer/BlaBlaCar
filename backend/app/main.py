@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.api import auth, trips, requests, users, notifications
 from app.core.config import settings
@@ -16,7 +17,9 @@ from app.core.database import (
     get_trip_repo, 
     get_request_repo, 
     get_notification_repo,
-    get_refresh_token_repo
+    get_refresh_token_repo,
+    init_postgres,
+    create_tables
 )
 from app.core.exceptions import (
     NotFoundError,
@@ -47,6 +50,12 @@ async def lifespan(app: FastAPI):
     Initializes the notification worker on startup and gracefully shuts it down.
     """
     global _worker_task
+    
+    # Startup: Initialize PostgreSQL if enabled
+    if settings.USE_POSTGRESQL:
+        init_postgres()
+        await create_tables()
+        print("[OK] PostgreSQL initialized")
     
     # Startup: Initialize notification backend and start worker
     notification_repo = get_notification_repo()
@@ -166,7 +175,24 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    """Health check endpoint with database status"""
+    from app.core.database import engine
+    from app.core.config import settings
+    
+    status = {"status": "ok", "database": "in-memory"}
+    
+    if settings.USE_POSTGRESQL and engine is not None:
+        try:
+            # Test database connection
+            async with engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+            status["database"] = "postgresql"
+            status["postgres_status"] = "connected"
+        except Exception as e:
+            status["status"] = "error"
+            status["postgres_status"] = f"error: {str(e)}"
+    
+    return status
 
 
 @app.get("/docs")
