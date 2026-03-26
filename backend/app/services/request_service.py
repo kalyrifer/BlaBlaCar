@@ -312,6 +312,34 @@ class RequestService:
                     "request_id": str(request.id)
                 }
             })
+            
+            # Создание чата при подтверждении заявки
+            if new_status == RequestStatus.CONFIRMED:
+                try:
+                    from app.repositories.inmemory.chat_repo import InMemoryChatRepository
+                    from app.services.chat_service import ChatService
+                    
+                    chat_repo = InMemoryChatRepository()
+                    chat_service = ChatService(chat_repo)
+                    
+                    # Создать или получить существующий чат
+                    await chat_service.get_or_create_conversation(
+                        trip_id=trip.id,
+                        driver_id=trip.driver_id,
+                        passenger_id=request.passenger_id
+                    )
+                    logger.info(
+                        "Chat created for confirmed request",
+                        extra={
+                            "trip_id": str(trip.id),
+                            "passenger_id": str(request.passenger_id)
+                        }
+                    )
+                except Exception as e:
+                    logger.error(
+                        "Failed to create chat for confirmed request",
+                        extra={"error": str(e)}
+                    )
         
         # Получение информации о пассажире (вне блокировки)
         passenger = await self._user_repo.get_by_id(request.passenger_id)

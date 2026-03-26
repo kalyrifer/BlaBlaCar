@@ -14,6 +14,8 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const ChatPage = lazy(() => import('./pages/ChatPage'));
 
 // Loading fallback component
 function PageLoader() {
@@ -79,6 +81,16 @@ function App() {
           <Route path="notifications" element={
             <ProtectedRoute>
               <NotificationsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="messages" element={
+            <ProtectedRoute>
+              <MessagesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="messages/:id" element={
+            <ProtectedRoute>
+              <ChatPage />
             </ProtectedRoute>
           } />
         </Route>

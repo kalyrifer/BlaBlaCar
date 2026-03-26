@@ -67,3 +67,36 @@ export interface SearchParams {
   to_city: string;
   date?: string;
 }
+
+// ================== Chat Types ==================
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface ConversationListItem {
+  id: string;
+  trip_id: string;
+  other_user_id: string;
+  other_user_name: string;
+  trip_from_city: string;
+  trip_to_city: string;
+  last_message?: string;
+  last_message_time?: string;
+  unread_count: number;
+}
+
+export interface MessageListResponse {
+  items: Message[];
+  total: number;
+}
+
+export interface ConversationListResponse {
+  items: ConversationListItem[];
+  total: number;
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { tripsApi } from '../services/api';
+import { tripsApi, api } from '../services/api';
 import { useAuthStore } from '../stores/auth';
 import type { Trip } from '../types';
 
@@ -14,6 +14,7 @@ export default function TripPage() {
   const [seats, setSeats] = useState(1);
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -42,6 +43,19 @@ export default function TripPage() {
       console.error('Error creating request:', error);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOpenChat = async () => {
+    if (!trip || chatLoading) return;
+    setChatLoading(true);
+    try {
+      const response = await api.getOrCreateConversation(trip.id, user!.id);
+      navigate(`/messages/${response.data.id}`);
+    } catch (error) {
+      console.error('Error opening chat:', error);
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -155,13 +169,23 @@ export default function TripPage() {
             Войдите, чтобы отправить заявку
           </Link>
         ) : trip.available_seats > 0 ? (
-          <button 
-            onClick={() => setShowModal(true)} 
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '16px' }}
-          >
-            Забронировать место
-          </button>
+          <>
+            <button 
+              onClick={() => setShowModal(true)} 
+              className="btn btn-primary"
+              style={{ width: '100%', padding: '16px' }}
+            >
+              Забронировать место
+            </button>
+            <button 
+              onClick={handleOpenChat}
+              disabled={chatLoading}
+              className="btn btn-secondary"
+              style={{ width: '100%', marginTop: '12px' }}
+            >
+              {chatLoading ? 'Загрузка...' : 'Написать водителю'}
+            </button>
+          </>
         ) : (
           <div style={{ 
             padding: '16px', 

@@ -27,6 +27,9 @@ export default function Layout() {
               <Link to="/profile" className={location.pathname === '/profile' ? 'active' : ''}>
                 Профиль
               </Link>
+              <Link to="/messages" className={location.pathname === '/messages' ? 'active' : ''} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>Чаты</span>
+              </Link>
             </nav>
             
             <nav className="nav nav-right">

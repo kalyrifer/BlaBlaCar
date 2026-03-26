@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { User, Trip, TripRequest, Notification, PaginatedResponse, SearchParams } from '../types';
+import type { User, Trip, TripRequest, Notification, PaginatedResponse, SearchParams, Message, ConversationListItem, MessageListResponse, ConversationListResponse } from '../types';
 
 // Axios instance for making HTTP requests
 const axiosInstance = axios.create({
@@ -139,6 +139,33 @@ export const notificationsApi = {
   markAllAsRead: () => axiosInstance.put('/notifications/read-all'),
 };
 
+// Chat
+export const chatApi = {
+  // Get all conversations for the current user
+  getConversations: () =>
+    axiosInstance.get<ConversationListResponse>('/chat/conversations'),
+  
+  // Get or create a conversation for a trip
+  getOrCreateConversation: (tripId: string, passengerId: string) =>
+    axiosInstance.post<ConversationListItem>('/chat/conversations', {
+      trip_id: tripId,
+      passenger_id: passengerId,
+    }),
+  
+  // Get messages in a conversation
+  getMessages: (conversationId: string, skip?: number, limit?: number) =>
+    axiosInstance.get<MessageListResponse>(`/chat/conversations/${conversationId}/messages`, {
+      params: { skip, limit },
+    }),
+  
+  // Send a message
+  sendMessage: (conversationId: string, content: string) =>
+    axiosInstance.post<Message>(`/chat/conversations/${conversationId}/messages`, {
+      conversation_id: conversationId,
+      content,
+    }),
+};
+
 // Convenience exports - re-export all APIs under one object
 export const api = {
   // Auth
@@ -170,6 +197,12 @@ export const api = {
   getNotifications: notificationsApi.getAll,
   markNotificationRead: notificationsApi.markAsRead,
   markAllNotificationsRead: notificationsApi.markAllAsRead,
+  
+  // Chat
+  getConversations: chatApi.getConversations,
+  getOrCreateConversation: chatApi.getOrCreateConversation,
+  getMessages: chatApi.getMessages,
+  sendMessage: chatApi.sendMessage,
 };
 
 export default api;
