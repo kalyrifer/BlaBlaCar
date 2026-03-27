@@ -1,5 +1,5 @@
 """Auth endpoints"""
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, EmailStr
@@ -56,11 +56,11 @@ async def register(
     # Generate refresh token
     raw_token, hashed_token = create_refresh_token(result.id)
     
-    # Store hashed token
+    # Store raw token (PostgreSQL stores the raw token, not hashed)
     await refresh_token_repo.create({
         "user_id": UUID(result.id),
-        "hashed_token": hashed_token,
-        "expires_in_days": 7
+        "token": raw_token,
+        "expires_at": datetime.utcnow() + timedelta(days=7)
     })
     
     return {
@@ -82,11 +82,11 @@ async def login(
     # Generate refresh token
     raw_token, hashed_token = create_refresh_token(result.user.id)
     
-    # Store hashed token
+    # Store raw token (PostgreSQL stores the raw token, not hashed)
     await refresh_token_repo.create({
         "user_id": UUID(result.user.id),
-        "hashed_token": hashed_token,
-        "expires_in_days": 7
+        "token": raw_token,
+        "expires_at": datetime.utcnow() + timedelta(days=7)
     })
     
     return {
@@ -130,8 +130,8 @@ async def refresh_token(
     raw_token, hashed_token = create_refresh_token(token_data.user_id)
     await refresh_token_repo.create({
         "user_id": token_data.user_id,
-        "hashed_token": hashed_token,
-        "expires_in_days": 7
+        "token": raw_token,
+        "expires_at": datetime.utcnow() + timedelta(days=7)
     })
     
     return TokenResponse(

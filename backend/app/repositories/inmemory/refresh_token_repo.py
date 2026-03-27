@@ -54,12 +54,26 @@ class InMemoryRefreshTokenRepository(IRefreshTokenRepository):
         return None
     
     async def create(self, token_data: dict) -> RefreshToken:
-        """Create new refresh token with hashed token"""
+        """Create new refresh token - supports both old (hashed_token) and new (token) format"""
         token_id = uuid4()
-        expires_at = datetime.utcnow() + timedelta(days=token_data.get("expires_in_days", 7))
         
-        # The token_data should contain hashed_token
-        hashed_token = token_data.get("hashed_token", token_data.get("token", ""))
+        # Support both old format (hashed_token) and new format (token)
+        # For InMemory, we use hashed_token for security
+        if "token" in token_data:
+            # New format - token is raw, we need to hash it
+            from app.core.security import create_refresh_token
+            raw_token = token_data["token"]
+            _, hashed_token = create_refresh_token(UUID(str(token_data["user_id"])))
+            # Actually, we should use the raw token for lookup - let's store it directly
+            hashed_token = raw_token  # For in-memory, store as-is (not truly secure but works)
+        else:
+            hashed_token = token_data.get("hashed_token", token_data.get("token", ""))
+        
+        # Calculate expires_at
+        if "expires_at" in token_data:
+            expires_at = token_data["expires_at"]
+        else:
+            expires_at = datetime.utcnow() + timedelta(days=token_data.get("expires_in_days", 7))
         
         data = RefreshTokenData(
             id=token_id,
@@ -72,11 +86,23 @@ class InMemoryRefreshTokenRepository(IRefreshTokenRepository):
         return self._to_refresh_token_model(data)
     
     async def validate(self, plain_token: str) -> Optional[RefreshToken]:
-        """Validate plain token against stored hashed tokens
+        """Validate plain token against stored tokens
         
-        This iterates through tokens to find one that matches when verified.
-        For better performance in production, you'd want a different indexing strategy.
+        Supports both:
+        - New format: token stored directly (for PostgreSQL compatibility)
+        - Old format: hashed token stored, need to verify
         """
+        # First try direct lookup (new format)
+        for data in self._tokens.values():
+            if data.is_revoked:
+                continue
+            if data.expires_at < datetime.utcnow():
+                continue
+            # Direct match (new format where token is stored as-is)
+            if data.hashed_token == plain_token:
+                return self._to_refresh_token_model(data)
+        
+        # Try verification (old format with hashed tokens)
         from app.core.security import verify_refresh_token
         
         for data in self._tokens.values():

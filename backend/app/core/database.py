@@ -147,41 +147,47 @@ def get_db() -> Database:
 
 def get_user_repo() -> IUserRepository:
     """Get user repository"""
-    if settings.USE_POSTGRESQL:
+    if settings.USE_POSTGRESQL and async_session_maker is not None:
         from app.db.repositories.pg_user_repo import PGUserRepository
-        return PGUserRepository(db.pg_session)
+        # Create a new session for each request
+        session = async_session_maker()
+        return PGUserRepository(session)
     return db.users
 
 
 def get_trip_repo() -> ITripRepository:
     """Get trip repository"""
-    if settings.USE_POSTGRESQL:
+    if settings.USE_POSTGRESQL and async_session_maker is not None:
         from app.db.repositories.pg_trip_repo import PGTripRepository
-        return PGTripRepository(db.pg_session)
+        session = async_session_maker()
+        return PGTripRepository(session)
     return db.trips
 
 
 def get_request_repo() -> IRequestRepository:
     """Get request repository"""
-    if settings.USE_POSTGRESQL:
+    if settings.USE_POSTGRESQL and async_session_maker is not None:
         from app.db.repositories.pg_request_repo import PGRequestRepository
-        return PGRequestRepository(db.pg_session)
+        session = async_session_maker()
+        return PGRequestRepository(session)
     return db.requests
 
 
 def get_notification_repo() -> INotificationRepository:
     """Get notification repository"""
-    if settings.USE_POSTGRESQL:
+    if settings.USE_POSTGRESQL and async_session_maker is not None:
         from app.db.repositories.pg_notification_repo import PGNotificationRepository
-        return PGNotificationRepository(db.pg_session)
+        session = async_session_maker()
+        return PGNotificationRepository(session)
     return db.notifications
 
 
 def get_refresh_token_repo() -> IRefreshTokenRepository:
     """Get refresh token repository"""
-    if settings.USE_POSTGRESQL:
+    if settings.USE_POSTGRESQL and async_session_maker is not None:
         from app.db.repositories.pg_refresh_token_repo import PGRefreshTokenRepository
-        return PGRefreshTokenRepository(db.pg_session)
+        session = async_session_maker()
+        return PGRefreshTokenRepository(session)
     return db.refresh_tokens
 
 
