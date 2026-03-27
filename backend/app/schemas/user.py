@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 
 
 # ================== Response DTOs ==================
@@ -41,6 +41,14 @@ class UserCreate(BaseModel):
     password: str
     name: str
     phone: str
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        """Validate that phone number starts with +375 (Belarus)"""
+        if not v.startswith('+375'):
+            raise ValueError('Номер телефона должен начинаться с +375 (например, +375291234567)')
+        return v
 
 
 class UserCreateInternal(BaseModel):
@@ -51,6 +59,14 @@ class UserCreateInternal(BaseModel):
     password_hash: str
     name: str
     phone: str
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        """Validate that phone number starts with +375 (Belarus)"""
+        if not v.startswith('+375'):
+            raise ValueError('Номер телефона должен начинаться с +375 (например, +375291234567)')
+        return v
 
 
 # ================== Update DTOs ==================
@@ -62,6 +78,14 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+        """Validate that phone number starts with +375 (Belarus)"""
+        if v is not None and not v.startswith('+375'):
+            raise ValueError('Номер телефона должен начинаться с +375 (например, +375291234567)')
+        return v
 
 
 # ================== Login DTOs ==================

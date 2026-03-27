@@ -66,10 +66,6 @@ class Settings(BaseSettings):
     
     # Alert thresholds
     ERROR_RATE_THRESHOLD: float = 5.0  # percent
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 
 @lru_cache()

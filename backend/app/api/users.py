@@ -2,18 +2,13 @@
 from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, status, Depends, Query
-from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
+from app.schemas.user import UserUpdate
 
 router = APIRouter()
-
-
-class UpdateUserRequest(BaseModel):
-    name: Optional[str] = None
-    phone: Optional[str] = None
 
 
 @router.get("/me")
@@ -60,7 +55,7 @@ async def get_user(user_id: str, current_user: User = Depends(get_current_user))
 @router.put("/{user_id}")
 async def update_user(
     user_id: str,
-    request: UpdateUserRequest,
+    request: UserUpdate,
     current_user: User = Depends(get_current_user)
 ):
     if str(current_user.id) != user_id:
