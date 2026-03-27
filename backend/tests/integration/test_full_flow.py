@@ -47,6 +47,7 @@ def override_dependencies(mock_db):
     from app.services.auth_service import AuthService
     from app.services.trip_service import TripService
     from app.services.request_service import RequestService
+    from app.repositories.inmemory.refresh_token_repo import InMemoryRefreshTokenRepository
     
     def override_get_current_user():
         """Mock current user - will be overridden per test"""
@@ -67,10 +68,14 @@ def override_dependencies(mock_db):
             lock_manager=mock_db.lock_manager
         )
     
+    def override_get_refresh_token_repo():
+        return mock_db.refresh_tokens
+    
     app.dependency_overrides[deps.get_current_user] = override_get_current_user
     app.dependency_overrides[deps.get_auth_service] = override_get_auth_service
     app.dependency_overrides[deps.get_trip_service] = override_get_trip_service
     app.dependency_overrides[deps.get_request_service] = override_get_request_service
+    app.dependency_overrides[deps.get_refresh_token_repo] = override_get_refresh_token_repo
     
     yield mock_db
     
@@ -127,7 +132,7 @@ class TestFullFlowIntegration:
         )
         assert driver_response.status_code == 200
         driver_data = driver_response.json()
-        driver_id = driver_data["id"]
+        driver_id = driver_data["user"]["id"]
         
         # Step 2: Register passenger
         passenger_response = client.post(
@@ -141,7 +146,7 @@ class TestFullFlowIntegration:
         )
         assert passenger_response.status_code == 200
         passenger_data = passenger_response.json()
-        passenger_id = passenger_data["id"]
+        passenger_id = passenger_data["user"]["id"]
         
         # Step 3: Create trip by driver - mock the auth dependency
         from app.models.user import User

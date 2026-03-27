@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # JWT - RS256 with RSA keys
-    JWT_ALGORITHM: str = "RS256"
+    JWT_ALGORITHM: str = "HS256"
     JWT_PUBLIC_KEY_PATH: str = "./keys/public.pem"
     JWT_PRIVATE_KEY_PATH: str = "./keys/private.pem"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # Short-lived access tokens

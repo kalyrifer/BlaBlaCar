@@ -73,6 +73,7 @@ async def get_request_service() -> RequestService:
     )
 
 
-async def get_refresh_token_repo() -> IRefreshTokenRepository:
+def get_refresh_token_repo() -> IRefreshTokenRepository:
     """Получить экземпляр RefreshTokenRepository"""
-    return get_refresh_token_repo()
+    from app.core.database import get_refresh_token_repo as _get_refresh_token_repo
+    return _get_refresh_token_repo()
